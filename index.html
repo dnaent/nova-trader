@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Trader - Institutional-Grade Trading Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <span class="brand-text">Nova<span class="brand-accent">Trader</span></span>
+            </div>
+            <div class="nav-menu">
+                <a href="#overview" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Platform Overview
+                </a>
+                <a href="#infrastructure" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2l3.09 6.26L22 9l-5 4.87 1.18 6.88L12 17.77l-6.18 2.98L7 14.87 2 9l6.91-1.74L12 2z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Trading Engine
+                </a>
+                <a href="#portfolios" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Asset Management
+                </a>
+                <a href="#technology" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Cloud Architecture
+                </a>
+                <a href="#performance" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Analytics
+                </a>
+                <a href="docs/" class="nav-link">
+                    <span class="nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2-7h-3V2h-2v2H8V2H6v2H3c-1.1 0-1.99.9-1.99 2L1 20c0 1.1.89 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H3V9h18v11z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Capital Timeline
+                </a>
+            </div>
+            <button class="nav-cta">
+                <span class="cta-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-1.99.85-3.77 2.17-5.41L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z" fill="currentColor"/>
+                    </svg>
+                </span>
+                Launch Platform
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Institutional-Grade
+                    <span class="gradient-text">Trading Platform</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Sophisticated multi-asset algorithmic trading with ML/AI integration,
+                    professional risk management, and comprehensive tax optimization for UK investors.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">£76,872</div>
+                        <div class="stat-label">Total Portfolio Value</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">10+</div>
+                        <div class="stat-label">Investment Strategies</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">9/10</div>
+                        <div class="stat-label">Sophistication Rating</div>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    <button class="btn-primary">Explore Platform</button>
+                    <button class="btn-secondary">View Documentation</button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="trading-dashboard">
+                    <div class="dashboard-header">
+                        <div class="status-indicator active"></div>
+                        <span>Live Trading • Active</span>
+                    </div>
+                    <div class="dashboard-metrics">
+                        <div class="metric">
+                            <span class="metric-label">P&L Today</span>
+                            <span class="metric-value positive">+£1,247</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Active Positions</span>
+                            <span class="metric-value">23</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Success Rate</span>
+                            <span class="metric-value">78.4%</span>
+                        </div>
+                    </div>
+                    <div class="chart-placeholder">
+                        <div class="chart-line"></div>
+                        <div class="chart-bars">
+                            <div class="bar" style="height: 60%"></div>
+                            <div class="bar" style="height: 80%"></div>
+                            <div class="bar" style="height: 45%"></div>
+                            <div class="bar" style="height: 90%"></div>
+                            <div class="bar" style="height: 70%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview Section -->
+    <section id="overview" class="overview">
+        <div class="container">
+            <h2 class="section-title">Platform Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3>Algorithmic Trading</h3>
+                    <p>Advanced forex algorithms with LSTM neural networks, dynamic risk management, and multi-currency support across major pairs.</p>
+                    <div class="card-stats">
+                        <span>5 Currency Pairs • ML Integration • 24/7 Operation</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Success Rate</span>
+                            <span class="metric-value">78.4%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Avg Trade</span>
+                            <span class="metric-value">£247</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Daily Volume</span>
+                            <span class="metric-value">£12.5K</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Latency</span>
+                            <span class="metric-value">< 100ms</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3>Multi-Asset Portfolios</h3>
+                    <p>Diversified investment strategies across crypto, energy, commodities, and equities with sophisticated risk-adjusted allocation models.</p>
+                    <div class="card-stats">
+                        <span>100+ Positions • 7 Asset Classes • Tax Optimized</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Total AUM</span>
+                            <span class="metric-value">£76.9K</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Active Positions</span>
+                            <span class="metric-value">127</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Portfolio Beta</span>
+                            <span class="metric-value">0.85</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Correlation</span>
+                            <span class="metric-value">0.34</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3>Geopolitical Intelligence</h3>
+                    <p>Real-time catalyst monitoring for energy markets, critical minerals, and geopolitical events driving asymmetric opportunities.</p>
+                    <div class="card-stats">
+                        <span>Real-time Alerts • Event-driven • 37-68% Target Returns</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Active Catalysts</span>
+                            <span class="metric-value">23</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">News Sources</span>
+                            <span class="metric-value">47</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Alert Accuracy</span>
+                            <span class="metric-value">91.2%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Response Time</span>
+                            <span class="metric-value">< 30s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3>Risk Management</h3>
+                    <p>Professional-grade risk controls with correlation analysis, dynamic position sizing, and maximum 19% portfolio downside protection.</p>
+                    <div class="card-stats">
+                        <span>3.7:1 Risk/Reward • ATR Stops • Correlation Matrix</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Max Drawdown</span>
+                            <span class="metric-value">-19%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">VaR (95%)</span>
+                            <span class="metric-value">£1.2K</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Sharpe Ratio</span>
+                            <span class="metric-value">2.14</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Risk Score</span>
+                            <span class="metric-value">7/10</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trading Infrastructure Dashboard -->
+    <section id="infrastructure" class="trading-infrastructure">
+        <div class="container">
+            <h2 class="section-title">Trading Infrastructure Dashboard</h2>
+            <div class="infrastructure-grid">
+                <!-- Market Analysis -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>Market Analysis Engine</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>Real-time Data Feeds</span>
+                            <span class="metric-value-sm">47 Sources</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Technical Indicators</span>
+                            <span class="metric-value-sm">23 Active</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Market Sentiment</span>
+                            <span class="metric-value-sm positive">Bullish 64%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Volatility Index</span>
+                            <span class="metric-value-sm">18.4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Position Calculator -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>Position Calculator</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>Max Position Size</span>
+                            <span class="metric-value-sm">£2,500</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Risk Per Trade</span>
+                            <span class="metric-value-sm">2%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>ATR Stop Loss</span>
+                            <span class="metric-value-sm">1.5x ATR</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Kelly Criterion</span>
+                            <span class="metric-value-sm">0.25</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Influence Tracker -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2l3.09 6.26L22 9l-5 4.87 1.18 6.88L12 17.77l-6.18 2.98L7 14.87 2 10l6.91-1.74L12 2z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>News Influence Tracker</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>Active News Events</span>
+                            <span class="metric-value-sm">12</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Sentiment Score</span>
+                            <span class="metric-value-sm positive">+0.73</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Impact Probability</span>
+                            <span class="metric-value-sm">87%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Response Time</span>
+                            <span class="metric-value-sm">< 15s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Optimization -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>Tax Optimization Engine</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>CGT Allowance Used</span>
+                            <span class="metric-value-sm">£2,400 / £6,000</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>ISA Allowance Used</span>
+                            <span class="metric-value-sm">£11,500 / £20,000</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>SIPP Contribution</span>
+                            <span class="metric-value-sm">£20,372</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Tax Efficiency</span>
+                            <span class="metric-value-sm positive">94.2%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Calculator -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2l3.09 6.26L22 9l-5 4.87 1.18 6.88L12 17.77l-6.18 2.98L7 14.87 2 10l6.91-1.74L12 2z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>Risk Calculator</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>Portfolio VaR</span>
+                            <span class="metric-value-sm danger">£1,247</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Beta to Market</span>
+                            <span class="metric-value-sm">0.85</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Correlation Risk</span>
+                            <span class="metric-value-sm">0.34</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Stress Test</span>
+                            <span class="metric-value-sm positive">Pass</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Analytics -->
+                <div class="infrastructure-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5 12h-15V2h15v21z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h3>Performance Analytics</h3>
+                    </div>
+                    <div class="infrastructure-metrics">
+                        <div class="metric-row">
+                            <span>YTD Return</span>
+                            <span class="metric-value-sm positive">+24.7%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Sharpe Ratio</span>
+                            <span class="metric-value-sm">2.14</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Max Drawdown</span>
+                            <span class="metric-value-sm danger">-8.3%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Win Rate</span>
+                            <span class="metric-value-sm positive">78.4%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="architecture">
+        <div class="container">
+            <h2 class="section-title">System Architecture</h2>
+            <div class="architecture-diagram">
+                <div class="arch-layer">
+                    <h3>Data Ingestion</h3>
+                    <div class="arch-components">
+                        <div class="arch-component">Pub/Sub Streaming</div>
+                        <div class="arch-component">Dataflow Pipelines</div>
+                        <div class="arch-component">Cloud Storage</div>
+                        <div class="arch-component">BigQuery Warehouse</div>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <h3>AI/ML Processing</h3>
+                    <div class="arch-components">
+                        <div class="arch-component">Vertex AI</div>
+                        <div class="arch-component">AutoML Tables</div>
+                        <div class="arch-component">TensorFlow</div>
+                        <div class="arch-component">BigQuery ML</div>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <h3>Application Layer</h3>
+                    <div class="arch-components">
+                        <div class="arch-component">Cloud Run Services</div>
+                        <div class="arch-component">Cloud Functions</div>
+                        <div class="arch-component">Load Balancer</div>
+                        <div class="arch-component">API Gateway</div>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <h3>Infrastructure</h3>
+                    <div class="arch-components">
+                        <div class="arch-component">Google Cloud Platform</div>
+                        <div class="arch-component">Cloud SQL PostgreSQL</div>
+                        <div class="arch-component">Secret Manager</div>
+                        <div class="arch-component">IAM Security</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolios Section -->
+    <section id="portfolios" class="portfolios">
+        <div class="container">
+            <h2 class="section-title">Investment Portfolios</h2>
+            <div class="portfolios-grid">
+                <div class="portfolio-card" data-portfolio="isa">
+                    <div class="portfolio-header">
+                        <div class="portfolio-title-group">
+                            <h3>ISA Portfolio</h3>
+                            <span class="portfolio-nickname">"The Aeroplane"</span>
+                        </div>
+                        <button class="portfolio-expand-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="portfolio-value">£11,500</div>
+                    <div class="portfolio-description">Tax-free growth optimization with AI infrastructure focus</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 15%"></div>
+                        </div>
+                        <span>15% of total portfolio</span>
+                    </div>
+                    <div class="portfolio-details">
+                        <div class="portfolio-metrics">
+                            <div class="metric-item-small">
+                                <span class="metric-label">YTD Return</span>
+                                <span class="metric-value positive">+18.3%</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Holdings</span>
+                                <span class="metric-value">12</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Risk Level</span>
+                                <span class="metric-value">Moderate</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Tax Status</span>
+                                <span class="metric-value positive">Tax-Free</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-strategy">
+                            <h4>Investment Strategy</h4>
+                            <ul>
+                                <li>AI infrastructure ETFs (40%)</li>
+                                <li>UK dividend aristocrats (30%)</li>
+                                <li>Growth technology stocks (30%)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="portfolio-card" data-portfolio="sipp">
+                    <div class="portfolio-header">
+                        <div class="portfolio-title-group">
+                            <h3>SIPP Portfolio</h3>
+                            <span class="portfolio-nickname">"The Pension Fortress"</span>
+                        </div>
+                        <button class="portfolio-expand-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="portfolio-value">£20,372</div>
+                    <div class="portfolio-description">25-year compounding strategy with critical minerals exposure</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 27%"></div>
+                        </div>
+                        <span>27% of total portfolio</span>
+                    </div>
+                    <div class="portfolio-details">
+                        <div class="portfolio-metrics">
+                            <div class="metric-item-small">
+                                <span class="metric-label">YTD Return</span>
+                                <span class="metric-value positive">+22.7%</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Holdings</span>
+                                <span class="metric-value">18</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Risk Level</span>
+                                <span class="metric-value">High</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Time Horizon</span>
+                                <span class="metric-value">25 Years</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-strategy">
+                            <h4>Investment Strategy</h4>
+                            <ul>
+                                <li>Critical minerals mining (35%)</li>
+                                <li>Renewable energy infrastructure (25%)</li>
+                                <li>Global equity index funds (25%)</li>
+                                <li>Emerging market bonds (15%)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="portfolio-card" data-portfolio="gia">
+                    <div class="portfolio-header">
+                        <div class="portfolio-title-group">
+                            <h3>GIA Portfolio</h3>
+                            <span class="portfolio-nickname">"The Rocket Ship"</span>
+                        </div>
+                        <button class="portfolio-expand-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="portfolio-value">£27,000</div>
+                    <div class="portfolio-description">Aggressive US growth strategy with maximum flexibility</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 35%"></div>
+                        </div>
+                        <span>35% of total portfolio</span>
+                    </div>
+                    <div class="portfolio-details">
+                        <div class="portfolio-metrics">
+                            <div class="metric-item-small">
+                                <span class="metric-label">YTD Return</span>
+                                <span class="metric-value positive">+31.2%</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Holdings</span>
+                                <span class="metric-value">25</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Risk Level</span>
+                                <span class="metric-value">Aggressive</span>
+                            </div>
+                            <div class="metric-item-small">
+                                <span class="metric-label">Flexibility</span>
+                                <span class="metric-value positive">Maximum</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-strategy">
+                            <h4>Investment Strategy</h4>
+                            <ul>
+                                <li>US tech growth stocks (45%)</li>
+                                <li>Emerging market ETFs (25%)</li>
+                                <li>Small-cap growth funds (20%)</li>
+                                <li>Speculative opportunities (10%)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-header">
+                        <h3>Crypto Portfolio</h3>
+                        <span class="portfolio-nickname">"The Digital Arsenal"</span>
+                    </div>
+                    <div class="portfolio-value">£10,500</div>
+                    <div class="portfolio-description">10-year conviction plays in blockchain infrastructure</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 14%"></div>
+                        </div>
+                        <span>14% of total portfolio</span>
+                    </div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-header">
+                        <h3>Energy Matrix</h3>
+                        <span class="portfolio-nickname">"Geopolitical Arbitrage"</span>
+                    </div>
+                    <div class="portfolio-value">£10,000</div>
+                    <div class="portfolio-description">Short-term catalyst-driven opportunities in oil & gas</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 13%"></div>
+                        </div>
+                        <span>13% of total portfolio</span>
+                    </div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-header">
+                        <h3>Speculative Bets</h3>
+                        <span class="portfolio-nickname">"Asymmetric Plays"</span>
+                    </div>
+                    <div class="portfolio-value">£6,300</div>
+                    <div class="portfolio-description">High-risk, high-reward moonshot opportunities</div>
+                    <div class="portfolio-allocation">
+                        <div class="allocation-bar">
+                            <div class="allocation-fill" style="width: 8%"></div>
+                        </div>
+                        <span>8% of total portfolio</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Section -->
+    <section id="technology" class="technology">
+        <div class="container">
+            <h2 class="section-title">Technology Stack</h2>
+            <div class="tech-categories">
+                <div class="tech-category">
+                    <h3>AI/ML Platform</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">Vertex AI</div>
+                        <div class="tech-item">AutoML Tables</div>
+                        <div class="tech-item">BigQuery ML</div>
+                        <div class="tech-item">TensorFlow on GCP</div>
+                    </div>
+                </div>
+                <div class="tech-category">
+                    <h3>Data & Analytics</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">BigQuery Data Warehouse</div>
+                        <div class="tech-item">Pub/Sub Messaging</div>
+                        <div class="tech-item">Dataflow Streaming</div>
+                        <div class="tech-item">Cloud Storage</div>
+                    </div>
+                </div>
+                <div class="tech-category">
+                    <h3>Compute & Infrastructure</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">Cloud Run Serverless</div>
+                        <div class="tech-item">Compute Engine VMs</div>
+                        <div class="tech-item">Cloud Functions</div>
+                        <div class="tech-item">Google Kubernetes Engine</div>
+                    </div>
+                </div>
+                <div class="tech-category">
+                    <h3>Database & Security</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">Cloud SQL PostgreSQL</div>
+                        <div class="tech-item">Cloud Firestore</div>
+                        <div class="tech-item">Secret Manager</div>
+                        <div class="tech-item">Identity & Access Management</div>
+                    </div>
+                </div>
+                <div class="tech-category">
+                    <h3>Monitoring & Operations</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">Cloud Monitoring</div>
+                        <div class="tech-item">Cloud Logging</div>
+                        <div class="tech-item">Error Reporting</div>
+                        <div class="tech-item">Cloud Trace</div>
+                    </div>
+                </div>
+                <div class="tech-category">
+                    <h3>Trading Platforms</h3>
+                    <div class="tech-items">
+                        <div class="tech-item">MetaTrader Integration</div>
+                        <div class="tech-item">Alpaca API</div>
+                        <div class="tech-item">OANDA Platform</div>
+                        <div class="tech-item">Trading212 Connector</div>
+                    </div>
+                </div>
+            </div>
+            <div class="tech-highlights">
+                <div class="highlight-item">
+                    <div class="highlight-number">< 50ms</div>
+                    <div class="highlight-label">Cloud Run Latency</div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-number">99.95%</div>
+                    <div class="highlight-label">GCP Uptime SLA</div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-number">Auto-Scale</div>
+                    <div class="highlight-label">Serverless Compute</div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-number">Global</div>
+                    <div class="highlight-label">Multi-Region Deploy</div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-number">IAM</div>
+                    <div class="highlight-label">Zero-Trust Security</div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-number">BigQuery</div>
+                    <div class="highlight-label">Petabyte Analytics</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section id="performance" class="performance">
+        <div class="container">
+            <h2 class="section-title">Performance Targets</h2>
+            <div class="performance-grid">
+                <div class="performance-card">
+                    <h3>Oil Spike Strategy</h3>
+                    <div class="performance-target">37-68%</div>
+                    <div class="performance-description">Target returns on geopolitical events</div>
+                    <div class="performance-timeline">Q2-Q4 2026 catalyst window</div>
+                </div>
+                <div class="performance-card">
+                    <h3>Long-term Compounding</h3>
+                    <div class="performance-target">15-25%</div>
+                    <div class="performance-description">Annual returns across portfolios</div>
+                    <div class="performance-timeline">25-year investment horizon</div>
+                </div>
+                <div class="performance-card">
+                    <h3>Risk-Adjusted Returns</h3>
+                    <div class="performance-target">3.7:1</div>
+                    <div class="performance-description">Reward-to-risk ratio target</div>
+                    <div class="performance-timeline">All strategies combined</div>
+                </div>
+                <div class="performance-card">
+                    <h3>Maximum Drawdown</h3>
+                    <div class="performance-target">19%</div>
+                    <div class="performance-description">Portfolio downside protection</div>
+                    <div class="performance-timeline">Stress-tested scenarios</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <span class="brand-text">Nova<span class="brand-accent">Trader</span></span>
+                </div>
+                <div class="footer-links">
+                    <a href="#documentation">Documentation</a>
+                    <a href="#api">API Access</a>
+                    <a href="#compliance">Compliance</a>
+                    <a href="#support">Support</a>
+                </div>
+            </div>
+            <div class="footer-disclaimer">
+                <p>⚠️ This platform is for educational and demonstration purposes only. All investments carry risk including total loss of capital. Past performance does not guarantee future results. Consult a qualified financial advisor before making investment decisions.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

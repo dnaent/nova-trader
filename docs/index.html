@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Trader - Capital Deployment Timeline</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="timeline.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="timeline-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <span class="brand-text">Nova<span class="brand-accent">Trader</span></span>
+                <span class="docs-label">Capital Deployment Timeline</span>
+            </div>
+            <div class="nav-controls">
+                <select id="portfolioFilter" class="portfolio-filter">
+                    <option value="all">All Portfolios</option>
+                    <option value="isa">ISA - "The Aeroplane"</option>
+                    <option value="sipp">SIPP - "The Pension Fortress"</option>
+                    <option value="gia">GIA - "The Rocket Ship"</option>
+                    <option value="crypto">Crypto - "The Digital Arsenal"</option>
+                    <option value="energy">Energy Matrix</option>
+                    <option value="speculative">Speculative Plays</option>
+                </select>
+                <button id="exportBtn" class="export-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                        <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
+                        <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Export
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Year Navigation -->
+    <div class="year-navigation">
+        <div class="year-tabs">
+            <button class="year-tab active" data-year="2026">2026</button>
+            <button class="year-tab" data-year="2027">2027</button>
+            <button class="year-tab" data-year="2028">2028</button>
+            <button class="year-tab" data-year="2029">2029</button>
+            <button class="year-tab" data-year="2030">2030</button>
+        </div>
+        <div class="quarter-tabs" id="quarterTabs">
+            <button class="quarter-tab active" data-quarter="Q1">Q1</button>
+            <button class="quarter-tab" data-quarter="Q2">Q2</button>
+            <button class="quarter-tab" data-quarter="Q3">Q3</button>
+            <button class="quarter-tab" data-quarter="Q4">Q4</button>
+        </div>
+    </div>
+
+    <!-- Main Timeline Content -->
+    <main class="timeline-container">
+        <!-- Portfolio Summary Cards -->
+        <div class="portfolio-summary">
+            <div class="summary-card">
+                <h3>Total Capital Deployment</h3>
+                <div class="summary-value" id="totalCapital">£76,872</div>
+                <div class="summary-change positive" id="capitalChange">+£24,247 this quarter</div>
+            </div>
+            <div class="summary-card">
+                <h3>Active Catalysts</h3>
+                <div class="summary-value" id="activeCatalysts">23</div>
+                <div class="summary-change" id="catalystChange">8 high-probability events</div>
+            </div>
+            <div class="summary-card">
+                <h3>Risk-Adjusted Return</h3>
+                <div class="summary-value" id="expectedReturn">+27.4%</div>
+                <div class="summary-change positive" id="returnChange">Target range: 18-42%</div>
+            </div>
+        </div>
+
+        <!-- Timeline Content -->
+        <div class="timeline-content" id="timelineContent">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+
+        <!-- Catalyst Details Modal -->
+        <div class="catalyst-modal" id="catalystModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Catalyst Details</h3>
+                    <button class="modal-close" id="modalClose">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Dynamic catalyst details -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="timeline.js"></script>
+</body>
+</html>
