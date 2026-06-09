@@ -1,0 +1,48 @@
+# Nova Engine — portfolio manifest
+# One entry per "book" = (wrapper x asset class x broker x tax policy).
+# Replace the *_PLACEHOLDER account IDs with your real IBKR sub-account strings
+# once the FreeTrade -> IBKR migration completes (all appear under one login).
+#
+# Rules baked in here:
+#   - ISA / SIPP: tax_policy null (tax-free / tax-sheltered). Equities/ETFs only.
+#   - GIA: tax_policy uk_cgt is ACTIVE. Set higher_rate per the operator's band.
+#   - Options / FX must NEVER be added to ISA or SIPP allowed_assets.
+
+books:
+  - book_id: ibkr_isa_equity
+    wrapper: ISA
+    broker: IBKR
+    ibkr_account_id: "U_ISA_PLACEHOLDER"
+    allowed_assets: ["EQUITY", "ETF"]
+    tax_policy: null
+    sizing:
+      type: nav_pct
+      max_per_position_pct: 8
+      leverage: 1.0
+      unit: shares
+
+  - book_id: ibkr_sipp_equity
+    wrapper: SIPP
+    broker: IBKR
+    ibkr_account_id: "U_SIPP_PLACEHOLDER"
+    allowed_assets: ["EQUITY", "ETF"]   # long-term ETFs preferred
+    tax_policy: null
+    sizing:
+      type: nav_pct
+      max_per_position_pct: 6
+      leverage: 1.0
+      unit: shares
+
+  - book_id: ibkr_gia_equity
+    wrapper: GIA
+    broker: IBKR
+    ibkr_account_id: "U_GIA_PLACEHOLDER"
+    allowed_assets: ["EQUITY", "ETF"]
+    tax_policy:
+      type: uk_cgt
+      higher_rate: false              # set true if a higher-rate taxpayer
+    sizing:
+      type: nav_pct
+      max_per_position_pct: 8
+      leverage: 1.0
+      unit: shares
