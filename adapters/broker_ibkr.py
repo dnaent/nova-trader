@@ -65,7 +65,16 @@ class IBKRAdapter:
 
     def positions(self, ctx: AccountContext) -> list[dict]:
         if self.connector == "stub":
-            return [p for p in self._positions if p["account_id"] == ctx.ibkr_account_id]
+            pos_map = {}
+            for p in self._positions:
+                if p["account_id"] == ctx.ibkr_account_id:
+                    sym = p["symbol"]
+                    qty = Decimal(p["quantity"])
+                    if p["side"] == "SELL":
+                        qty = -qty
+                    pos_map[sym] = pos_map.get(sym, Decimal("0")) + qty
+            return [{"symbol": sym, "quantity": qty, "market_price": Decimal("0")} 
+                    for sym, qty in pos_map.items() if qty > 0]
         raise NotImplementedError
 
     # ----- execution ------------------------------------------------------ #
