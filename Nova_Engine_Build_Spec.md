@@ -1,9 +1,9 @@
 # Nova Engine — Build & Handoff Specification
 ### A portfolio-context, multi-book automated trading engine (IBKR-first)
 
-> **Purpose of this document.** This is the master handoff for Claude Cowork running on the local Windows 11 / RTX 3080 Ti machine. It defines what to build, in what order, and the hard rules that must never be violated. It evolves the original **Nova Bot** (a sole-Forex SaaS concept) into **Nova Engine** — one engine that understands the user's *portfolio context* and routes each trade to the correct account "book" with the correct asset rules, tax policy, and execution adapter.
+> **Purpose of this document.** This is the master handoff for the project which will be running on the local Windows 11 / RTX 3080 Ti machine (GitHub Source Control lean edits on Macbook Pro -> <- Lean GitHub -> <- Local run and future N8n automation on Windows 11 machine) full build and engine will run on local Windows 11 RTX 3080 Ti). It defines what to build, in what order, and the hard rules that must never be violated. It evolves the original **Nova_Trader** (a sole-Forex SaaS concept) into **Nova Engine** — one engine that understands the user's *portfolio context* and routes each trade to the correct account "book" with the correct asset rules, tax policy, and execution adapter.
 
-> **Not financial advice.** This system will trade the operator's own ISA, GIA, and SIPP capital, including pension funds. Automated trading carries real risk of loss. Build paper-trading-first, keep a human approval gate, and treat every safety rule below as non-negotiable.
+> **Not financial advice.** This system will trade the operator's own ISA, GIA, and SIPP capital, including pension funds at the operators choice. Optimised for IBKR - Future brokers coming soon. Automated trading carries real risk of loss. Build paper-trading-first, keep a human approval gate, and treat every safety rule below as non-negotiable.
 
 ---
 
