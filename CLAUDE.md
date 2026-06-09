@@ -25,3 +25,7 @@
 - **Mathematical Correlation**: The engine enforces a strict mathematical correlation check. `check_correlation()` in `core/risk.py` uses `yfinance` to compute a 90-day Pearson correlation matrix against all open positions to prevent over-exposure.
 - **Terminal Dashboard**: A live terminal UI built with `rich` (`ui/dashboard.py`). It must remain decoupled from the engine process, reading strictly from the SQLite database to avoid latency in the engine loop.
 - **Fault-Tolerance**: The engine is fully fault-tolerant against external API disconnects (yfinance failures, LLM timeouts). It gracefully falls back to a 50.0 score or default state without crashing the main loop.
+
+## UI/UX & Developer Skills Guidelines
+- **Developer Skills**: Repository-specific automation workflows are defined under the `skills/` directory. Each skill folder contains a `SKILL.md` defining its operational rules (e.g. [backtest-optimization](file:///Users/Phantom/Desktop/DNAENT™/Nova_Trader/skills/backtest-optimization/SKILL.md), [ledger-audit](file:///Users/Phantom/Desktop/DNAENT™/Nova_Trader/skills/ledger-audit/SKILL.md)).
+- **SaaS UI Design**: Employs an **Obsidian Glassmorphic** visual system (moving away from neumorphic shadows). Key rules: deep background `#0e0e0e`, boundaries defined via color shifts rather than opaque border lines, frosted card surfaces with `backdrop-filter: blur(20px)`, glowing orange/teal primary accents, and Space Mono / JetBrains Mono typography.
