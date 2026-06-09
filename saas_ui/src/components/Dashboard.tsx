@@ -13,10 +13,10 @@ const mockData = [
 ];
 
 const mockTrades = [
-  { sym: 'AAPL', type: 'BUY', size: 15, price: 185.2, time: '10:45 AM' },
-  { sym: 'NVDA', type: 'SELL', size: 10, price: 950.1, time: '11:15 AM' },
-  { sym: 'TSLA', type: 'BUY', size: 50, price: 175.4, time: '1:30 PM' },
-  { sym: 'GBPUSD=X', type: 'BUY', size: 10000, price: 1.25, time: '2:45 PM' },
+  { sym: 'AAPL', type: 'BUY', size: 15, price: 185.2, time: '10:45 AM', mlProb: '92.5%', trailingStop: '2.0 ATR' },
+  { sym: 'NVDA', type: 'SELL', size: 10, price: 950.1, time: '11:15 AM', mlProb: '45.1%', trailingStop: '1.5 ATR' },
+  { sym: 'TSLA', type: 'BUY', size: 50, price: 175.4, time: '1:30 PM', mlProb: '88.3%', trailingStop: '2.0 ATR' },
+  { sym: 'GBPUSD=X', type: 'BUY', size: 10000, price: 1.25, time: '2:45 PM', mlProb: '95.8%', trailingStop: '15 pips' },
 ];
 
 export default function Dashboard() {
@@ -90,6 +90,27 @@ export default function Dashboard() {
             <p className="mono text-muted text-sm mt-sm">Allowance fully utilized. Re-routing engine to ISA wrapper.</p>
           </div>
 
+          {/* ML Engine Status */}
+          <div className="card neu-flat">
+            <h3 className="text-muted">AI Quant Engine</h3>
+            <div className="flex-between mt-sm">
+              <span className="mono">Model:</span>
+              <span className="mono text-primary">Random Forest</span>
+            </div>
+            <div className="flex-between mt-sm">
+              <span className="mono">Features:</span>
+              <span className="mono text-primary">30+ Indicators</span>
+            </div>
+            <div className="flex-between mt-sm">
+              <span className="mono">Horizon:</span>
+              <span className="mono text-primary">5-Day Breakout</span>
+            </div>
+            <div className="flex-between mt-sm">
+              <span className="mono">Global Prob:</span>
+              <span className="mono text-success">85.4%</span>
+            </div>
+          </div>
+
           {/* Live Feed */}
           <div className="card neu-flat col-span-full">
             <h3 className="text-muted mb-md">Live Inference Feed</h3>
@@ -102,6 +123,10 @@ export default function Dashboard() {
                   <div className="feed-details">
                     <span className="mono font-bold">{t.type} {t.sym}</span>
                     <span className="text-muted ml-md">{t.size} units @ £{t.price}</span>
+                  </div>
+                  <div className="feed-meta mono text-sm ml-auto mr-md" style={{ display: 'flex', gap: '15px' }}>
+                    <span className="text-primary">ML: {t.mlProb}</span>
+                    <span className="text-success">T-Stop: {t.trailingStop}</span>
                   </div>
                   <div className="feed-time text-muted mono text-sm">
                     {t.time}
