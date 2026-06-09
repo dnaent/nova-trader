@@ -192,20 +192,20 @@ The Nova Trader is a highly sophisticated, multi-faceted trading and investment 
 - Dynamic tax wrapper optimization
 - AI infrastructure investment positioning
 
-## Next Steps for MVP Development
+## Current MVP Status & Next Steps
 
-### Immediate Priorities
-1. **Core Trading Engine** - Implement forex algorithm with ML integration
-2. **Portfolio Dashboard** - Build React-based monitoring interface
-3. **Risk Management System** - Deploy real-time position and correlation monitoring
-4. **Data Pipeline** - Establish reliable market data feeds and storage
-5. **Execution Infrastructure** - Integrate with primary trading platforms
+### Completed: Nova Engine Core MVP (Phases 1-5)
+1. **Core Trading Engine** - Implemented the deterministic-first, 3-layer pipeline (Macro Gate -> Quant Scanner -> LLM Auditor).
+2. **Terminal Dashboard** - Built a `rich`-based live monitoring interface (`ui/dashboard.py`).
+3. **Risk Management System** - Deployed real-time guardrails (Drawdown limits, Daily Loss Caps, Pearson Correlation) in `core/engine.py`.
+4. **Data Pipeline** - Established `yfinance` caching infrastructure for live financials and trailing data.
+5. **Tax & Ledger** - SQLite database tracking trades and NAV history, with UK CGT optimization active only for the GIA book.
+6. **Testing & Fault Tolerance** - End-to-end dry run complete, >90% coverage on core risk/tax modules, handling network/API failures gracefully.
 
-### Success Criteria
-- Fully automated forex trading with risk controls
-- Real-time portfolio monitoring across all strategies
-- Tax-optimized reporting and rebalancing recommendations
-- Backtesting framework for strategy validation
-- Secure, compliant infrastructure for production deployment
+### Next Immediate Priorities (Phase 6 & Beyond)
+1. **Live IBKR Execution** - Configure official Claude Connector for approval-gated paper trading, monitoring for two clean weeks.
+2. **Forex Fork Extension** - Implement `adapters/asset_fx.py` to trade the Forex Matrix alongside the Equities.
+3. **ATR Position Sizing** - Upgrade current flat NAV sizing to use Volatility (Average True Range).
+4. **News Sentiment Context** - Integrate real-time geopolitical event monitoring into the Inference Context Bundle for the LLM Auditor.
 
 This Nova Trader platform represents an exceptionally sophisticated approach to algorithmic trading and systematic investing, combining institutional-grade techniques with innovative geopolitical intelligence and comprehensive tax optimization for UK investors.

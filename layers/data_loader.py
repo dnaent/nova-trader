@@ -53,3 +53,21 @@ def get_financials(symbol: str) -> str:
         return f"No financial data found for {symbol}."
         
     return "\n\n".join(parts)
+
+def get_recent_news(symbol: str) -> str:
+    """Fetch recent news headlines and publishers."""
+    try:
+        ticker = yf.Ticker(symbol)
+        news = ticker.news
+        if not news:
+            return f"No recent news found for {symbol}."
+            
+        parts = ["### Recent News Headlines"]
+        for item in news[:5]:
+            title = item.get("title", "No Title")
+            publisher = item.get("publisher", "Unknown")
+            parts.append(f"- [{publisher}] {title}")
+            
+        return "\n".join(parts)
+    except Exception as e:
+        return f"News data unavailable for {symbol}: {str(e)}"

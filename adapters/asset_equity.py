@@ -4,7 +4,7 @@ from decimal import Decimal
 from core.context import Candidate
 from layers.macro_gate import MacroGate
 from layers.scanner import RegimeAwareScanner
-from layers.data_loader import get_financials
+from layers.data_loader import get_financials, get_recent_news
 import json
 
 class EquityAdapter:
@@ -27,6 +27,7 @@ class EquityAdapter:
 
     def auditor_prompt(self, c: Candidate) -> str:
         financials = get_financials(c.symbol)
+        news = get_recent_news(c.symbol)
         
         prompt = (
             f"Please audit the following company: {c.symbol}\n\n"
@@ -34,9 +35,11 @@ class EquityAdapter:
             f"Macro Environment:\n"
             f"{json.dumps(self._last_gate_result, indent=2) if self._last_gate_result else 'None'}\n\n"
             f"Company Financials (Last 4 Quarters):\n"
-            f"{financials}\n"
+            f"{financials}\n\n"
+            f"{news}\n"
             f"================================\n\n"
             f"Evaluate the company's debt, margins, and revenue trends against the Macro Environment risks above. "
+            f"Also consider any breaking geopolitical or corporate risks highlighted in the news. "
             f"Provide your analysis, and remember to end your response exactly with 'SCORE: <number>'."
         )
         return prompt

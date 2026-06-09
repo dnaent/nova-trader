@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+:root {
+  /* Dark Luxury Base */
+  --surface: #22252a; /* Deep charcoal */
+  --surface-active: #1d1f23;
+  --text: #e7e5e4;
+  --text-muted: #8b929a;
+  
+  /* Neumorphic Shadows for dark mode */
+  /* Darker shadow for bottom-right, lighter shadow for top-left */
+  --shadow-dark: #15171a;
+  --shadow-light: #2f333a;
+
+  /* Brand Colors (Merged Luxury Tech + Matrix Playful) */
+  --primary: #ff6b35; /* Vibrant Orange */
+  --secondary: #006666; /* Matrix Teal */
+  --success: #00A63D;
+  --warning: #FE9900;
+  --danger: #FF2157;
+  --info: #0ea5e9;
+
+  /* Fonts */
+  --font-primary: 'Space Mono', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Scale */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+.mono { font-family: var(--font-mono); }
+.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+
+/* Neumorphic Utilities */
+.neu-flat {
+  background: var(--surface);
+  box-shadow: 6px 6px 14px var(--shadow-dark), 
+             -6px -6px 14px var(--shadow-light);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.02);
+  transition: all 0.2s ease-in-out;
+}
+
+.neu-flat:hover {
+  box-shadow: 8px 8px 18px var(--shadow-dark), 
+             -8px -8px 18px var(--shadow-light);
+}
+
+.neu-pressed {
+  background: var(--surface);
+  box-shadow: inset 6px 6px 14px var(--shadow-dark), 
+              inset -6px -6px 14px var(--shadow-light);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.neu-convex {
+  background: linear-gradient(145deg, #24282d, #1f2126);
+  box-shadow: 6px 6px 14px var(--shadow-dark), 
+             -6px -6px 14px var(--shadow-light);
+  border-radius: var(--radius-md);
+}
+
+/* Glassmorphism hybrid (for overlays) */
+.glass {
+  background: rgba(34, 37, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Interactive Elements */
+button {
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  border: none;
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.btn-neu {
+  padding: 12px 24px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 5px 5px 10px var(--shadow-dark), 
+             -5px -5px 10px var(--shadow-light);
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.btn-neu:hover {
+  color: var(--primary);
+}
+
+.btn-neu:active {
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+              inset -4px -4px 8px var(--shadow-light);
+  color: var(--primary);
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 4px 4px 10px rgba(255, 107, 53, 0.4), 
+             -4px -4px 10px rgba(255, 107, 53, 0.1);
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:active {
+  box-shadow: inset 4px 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--shadow-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

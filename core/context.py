@@ -111,8 +111,19 @@ def _build_tax_policy(spec) -> TaxPolicy:
     raise ValueError(f"Unknown tax_policy: {spec!r}")
 
 def _build_sizing(spec: dict) -> SizingPolicy:
-    from core.risk import NavPctSizing
+    from core.risk import NavPctSizing, AtrSizing
     spec = spec or {}
+    sizing_type = spec.get("type", "nav_pct")
+    
+    if sizing_type == "atr_sizing":
+        return AtrSizing(
+            risk_pct=spec.get("risk_pct", 2.0),
+            leverage=spec.get("leverage", 1.0),
+            unit=spec.get("unit", "shares"),
+            stop_atr_multiplier=spec.get("stop_atr_multiplier", 2.0),
+            take_atr_multiplier=spec.get("take_atr_multiplier", 4.0),
+        )
+        
     return NavPctSizing(
         max_per_position_pct=spec.get("max_per_position_pct", 8.0),
         leverage=spec.get("leverage", 1.0),

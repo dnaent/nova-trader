@@ -332,14 +332,15 @@ When ready, Forex is additive, not a rewrite:
 
 | Phase | Goal | Done when |
 |---|---|---|
-| 0 | Env: WSL2 + CUDA + IBKR paper (connector and/or Gateway) | Paper connection verified; NAV reads back |
-| 1 | Core skeleton: interfaces, engine loop, manifest, SQLite ledger | Full paper cycle runs across ISA/SIPP/GIA; permissions enforced |
-| 2 | Layer 1 macro gate (live data) + Layer 2 scanner | Gate scales sizing; scanner returns ranked shortlist |
-| 3 | Layer 3 Claude auditor + 60/40 blend | Audited, blended scores drive paper orders; decisions logged |
-| 4 | Risk guardrails + NAV sizing + dashboard | Drawdown/daily caps trigger; dashboard live; >90% test coverage |
-| 5 | Weekend GPU walk-forward + Monte Carlo (propose-only) | Proposals written to review file; no auto-apply |
-| 6 | Two clean paper weeks → consider live (approval-gated) | Positive risk-adjusted paper results; human sign-off |
-| 7+ | Forex fork (Section 12) | FxAdapter added with zero core changes |
+| ✅ 0 | Env: WSL2 + CUDA + IBKR paper (connector and/or Gateway) | Paper connection verified; NAV reads back |
+| ✅ 1 | Core skeleton: interfaces, engine loop, manifest, SQLite ledger | Full paper cycle runs across ISA/SIPP/GIA; permissions enforced |
+| ✅ 2 | Layer 1 macro gate (live data) + Layer 2 scanner | Gate scales sizing; scanner returns ranked shortlist |
+| ✅ 3 | Layer 3 Claude auditor + 60/40 blend | Audited, blended scores drive paper orders; decisions logged |
+| ✅ 4 | Risk guardrails + NAV sizing + dashboard | Drawdown/daily caps trigger; dashboard live; >90% test coverage |
+| ✅ 5 | Final system tests + end-to-end dry run | Engine executes flawlessly and handles API network failures |
+| 6 | Weekend GPU walk-forward + Monte Carlo (propose-only) | Proposals written to review file; no auto-apply |
+| 7 | Two clean paper weeks → consider live (approval-gated) | Positive risk-adjusted paper results; human sign-off |
+| 8+ | Forex fork (Section 12) | FxAdapter added with zero core changes |
 
 ---
 
