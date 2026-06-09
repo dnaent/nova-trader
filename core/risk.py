@@ -3,6 +3,38 @@ from decimal import Decimal, ROUND_DOWN
 from typing import Protocol, runtime_checkable
 
 from core.context import AccountContext, Candidate, Order
+from layers.data_loader import get_daily_data
+import pandas as pd
+
+def check_correlation(candidate_symbol: str, open_symbols: list[str], max_corr: float) -> tuple[bool, str]:
+    """Returns (True, reason) if correlation with any open position exceeds max_corr. False otherwise."""
+    if not open_symbols:
+        return False, ""
+        
+    try:
+        cand_df = get_daily_data(candidate_symbol, lookback_days=90)
+        if cand_df.empty or "Close" not in cand_df.columns:
+            return False, ""
+        cand_returns = cand_df["Close"].pct_change().dropna()
+        
+        for osym in open_symbols:
+            o_df = get_daily_data(osym, lookback_days=90)
+            if o_df.empty or "Close" not in o_df.columns:
+                continue
+            o_returns = o_df["Close"].pct_change().dropna()
+            
+            # Align indices
+            aligned = pd.concat([cand_returns, o_returns], axis=1, join="inner")
+            if len(aligned) < 30: # Need at least 30 days of overlap to be meaningful
+                continue
+            corr = float(aligned.iloc[:, 0].corr(aligned.iloc[:, 1]))
+            if corr > max_corr:
+                return True, f"corr {corr:.2f} with {osym} > {max_corr}"
+                
+    except Exception:
+        pass
+        
+    return False, ""
 
 
 def gate_capacity(gate_score: float) -> Decimal:

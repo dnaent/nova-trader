@@ -52,6 +52,15 @@ CREATE TABLE IF NOT EXISTS trades (
 );
 CREATE INDEX IF NOT EXISTS idx_trades_book ON trades(book_id);
 CREATE INDEX IF NOT EXISTS idx_decisions_book ON decisions(book_id);
+
+CREATE TABLE IF NOT EXISTS nav_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts          TEXT NOT NULL,
+    date_str    TEXT NOT NULL,
+    book_id     TEXT NOT NULL,
+    nav         REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_nav_history_book ON nav_history(book_id);
 """
 
 
@@ -102,6 +111,14 @@ class Ledger:
             "WHERE id=?", (float(realized_pnl), trade_id))
         self.conn.commit()
 
+    def record_nav(self, book_id: str, nav: Decimal) -> None:
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.conn.execute(
+            "INSERT INTO nav_history (ts, date_str, book_id, nav) VALUES (?, ?, ?, ?)",
+            (_now(), date_str, book_id, float(nav))
+        )
+        self.conn.commit()
+
     # ----- reads / metrics ------------------------------------------------ #
     def _closed_pnls(self, book_id: Optional[str]) -> list[float]:
         q = "SELECT realized_pnl FROM trades WHERE realized_pnl IS NOT NULL"
@@ -111,6 +128,26 @@ class Ledger:
             args = (book_id,)
         q += " ORDER BY id ASC"
         return [r["realized_pnl"] for r in self.conn.execute(q, args)]
+
+    def get_peak_nav(self, book_id: str) -> Optional[float]:
+        row = self.conn.execute(
+            "SELECT MAX(nav) as peak FROM nav_history WHERE book_id=?", (book_id,)
+        ).fetchone()
+        return row["peak"] if row and row["peak"] is not None else None
+
+    def get_daily_loss_pct(self, book_id: str, current_nav: Decimal) -> float:
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        row = self.conn.execute(
+            "SELECT nav FROM nav_history WHERE book_id=? AND date_str < ? ORDER BY ts DESC LIMIT 1",
+            (book_id, date_str)
+        ).fetchone()
+        if not row:
+            return 0.0
+        start_nav = row["nav"]
+        if start_nav <= 0:
+            return 0.0
+        loss_pct = ((start_nav - float(current_nav)) / start_nav) * 100.0
+        return max(0.0, loss_pct)
 
     @staticmethod
     def _sharpe(pnls: list[float]) -> Optional[float]:

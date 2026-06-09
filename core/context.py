@@ -38,6 +38,14 @@ class Order:
     take_profit: Optional[Decimal] = None
     meta: dict = field(default_factory=dict)
 
+@dataclass
+class RiskGuardrails:
+    """Book-level safety limits."""
+    max_concurrent_positions: int = 10
+    max_drawdown_pct: float = 15.0
+    daily_loss_cap_pct: float = 3.0
+    max_correlation: float = 0.8
+
 # --------------------------------------------------------------------------- #
 # Policies
 # --------------------------------------------------------------------------- #
@@ -87,6 +95,7 @@ class AccountContext:
     allowed_assets: set         # hard permission set, enforced by the engine
     tax_policy: TaxPolicy
     sizing: SizingPolicy
+    guardrails: RiskGuardrails = field(default_factory=RiskGuardrails)
     nav: Decimal = Decimal("0")
 
 # --------------------------------------------------------------------------- #
@@ -110,6 +119,15 @@ def _build_sizing(spec: dict) -> SizingPolicy:
         unit=spec.get("unit", "shares"),
     )
 
+def _build_guardrails(spec: dict) -> RiskGuardrails:
+    spec = spec or {}
+    return RiskGuardrails(
+        max_concurrent_positions=spec.get("max_concurrent_positions", 10),
+        max_drawdown_pct=spec.get("max_drawdown_pct", 15.0),
+        daily_loss_cap_pct=spec.get("daily_loss_cap_pct", 3.0),
+        max_correlation=spec.get("max_correlation", 0.8),
+    )
+
 def load_books(manifest_path: str) -> list[AccountContext]:
     """Read portfolio.yaml and build one AccountContext per book."""
     import yaml  # imported lazily so the demo runs without pyyaml installed
@@ -125,5 +143,6 @@ def load_books(manifest_path: str) -> list[AccountContext]:
             allowed_assets=set(b["allowed_assets"]),
             tax_policy=_build_tax_policy(b.get("tax_policy")),
             sizing=_build_sizing(b.get("sizing")),
+            guardrails=_build_guardrails(b.get("guardrails")),
         ))
     return books

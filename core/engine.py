@@ -55,8 +55,35 @@ class Engine:
     def run_cycle(self) -> None:
         for ctx in self.books:
             ctx.nav = self.broker.refresh_nav(ctx)
+            
+            # 1. Update NAV history
+            self.ledger.record_nav(ctx.book_id, ctx.nav)
+            
             log.info("[%s] %s nav=%s allowed=%s", ctx.book_id, ctx.wrapper,
                      ctx.nav, sorted(ctx.allowed_assets))
+
+            # 2. Check Drawdown Limit
+            peak_nav = self.ledger.get_peak_nav(ctx.book_id) or float(ctx.nav)
+            if peak_nav > 0:
+                drawdown = ((peak_nav - float(ctx.nav)) / peak_nav) * 100.0
+                if drawdown >= ctx.guardrails.max_drawdown_pct:
+                    log.warning("[%s] Max drawdown breached (%.1f%% >= %.1f%%). Pausing new buys.", 
+                                ctx.book_id, drawdown, ctx.guardrails.max_drawdown_pct)
+                    continue
+
+            # 3. Check Daily Loss Cap
+            daily_loss = self.ledger.get_daily_loss_pct(ctx.book_id, ctx.nav)
+            if daily_loss >= ctx.guardrails.daily_loss_cap_pct:
+                log.warning("[%s] Daily loss cap breached (%.1f%% >= %.1f%%). Pausing new buys.", 
+                            ctx.book_id, daily_loss, ctx.guardrails.daily_loss_cap_pct)
+                continue
+
+            # 4. Check Max Concurrent Positions
+            open_positions = self.broker.positions(ctx)
+            if len(open_positions) >= ctx.guardrails.max_concurrent_positions:
+                log.info("[%s] Max concurrent positions (%d) reached. Skipping scans.", 
+                         ctx.book_id, len(open_positions))
+                continue
 
             for adapter in self.asset_adapters:
                 if not (adapter.handles & ctx.allowed_assets):
@@ -94,12 +121,24 @@ class Engine:
                             log.info("[%s] LIQUIDATED %s qty=%s", ctx.book_id, order.symbol, order.quantity)
                     continue
 
+                open_symbols = [p["symbol"] for p in open_positions]
+
                 for c in adapter.scan(self.cfg.universe)[: self.cfg.top_n]:
                     # HARD permission rule
                     if c.asset_class not in ctx.allowed_assets:
                         self.ledger.record_decision(ctx.book_id, c.symbol, gate,
                                                      c.quant_score, None, None, acted=False,
                                                      reason=f"{c.asset_class} not permitted")
+                        continue
+
+                    # Correlation Guardrail
+                    from core.risk import check_correlation
+                    is_correlated, corr_reason = check_correlation(c.symbol, open_symbols, ctx.guardrails.max_correlation)
+                    if is_correlated:
+                        self.ledger.record_decision(ctx.book_id, c.symbol, gate,
+                                                     c.quant_score, None, None, acted=False,
+                                                     reason=corr_reason)
+                        log.info("[%s] Skip %s: %s", ctx.book_id, c.symbol, corr_reason)
                         continue
 
                     claude_score = self.auditor.audit(adapter.auditor_prompt(c))
@@ -141,7 +180,7 @@ def _demo() -> None:
     from core.risk import NavPctSizing
     from adapters.broker_ibkr import IBKRAdapter
     from adapters.asset_equity import EquityAdapter
-    from layers.analyst import StubAuditor
+    from layers.analyst import LLMAuditor
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -162,7 +201,7 @@ def _demo() -> None:
 
     ledger = Ledger(":memory:")
     cfg = EngineConfig(universe=["SPY", "NVDA", "VWRL", "FORD"])
-    Engine(books, [EquityAdapter()], broker, StubAuditor(), ledger, cfg).run_cycle()
+    Engine(books, [EquityAdapter()], broker, LLMAuditor(backend="local"), ledger, cfg).run_cycle()
 
     print("\n=== Performance summary (per book) ===")
     for b in books:

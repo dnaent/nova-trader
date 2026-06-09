@@ -13,3 +13,9 @@
 - >90% test coverage on core/, risk/, tax/.
 - Acceptance for Phase 1: engine runs a full paper cycle across ISA/SIPP/GIA
   books, enforces permissions, logs to SQLite, and renders the dashboard.
+
+## Phase 2 & 3 Additions
+- **Continuous Sizing**: `gate_capacity` scales continuously from 70 to 40 instead of hard discrete steps.
+- **Aggressive Liquidation**: If `aggressive_liquidation` is True in config, dropping below the `gate_min` will actively execute `SELL` orders for open positions to move to cash.
+- **HMM Integration**: The Macro Gate blends VIX contango, Cross-Asset Correlation, and a Gaussian HMM (using *only* online filtered probabilities to prevent lookahead bias).
+- **Multi-API Auditor**: Layer 3 supports `local` (Ollama/OpenAI compatible), `anthropic`, and `gemini` backends. The "Inference Context Bundle" (Macro markers + trailing 4Q financials) acts as the standardized prompt across all models.

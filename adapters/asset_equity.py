@@ -4,6 +4,8 @@ from decimal import Decimal
 from core.context import Candidate
 from layers.macro_gate import MacroGate
 from layers.scanner import RegimeAwareScanner
+from layers.data_loader import get_financials
+import json
 
 class EquityAdapter:
     """Equity Adapter integrating Phase 2 Macro Gate and Scanner."""
@@ -24,5 +26,17 @@ class EquityAdapter:
         return self.scanner.scan(list(universe), hmm_prob)
 
     def auditor_prompt(self, c: Candidate) -> str:
-        context = f"Macro Context: {self._last_gate_result}. " if self._last_gate_result else ""
-        return f"{context}Review last 4 quarters for {c.symbol}; flag debt/margin risks; score 0-100."
+        financials = get_financials(c.symbol)
+        
+        prompt = (
+            f"Please audit the following company: {c.symbol}\n\n"
+            f"=== INFERENCE CONTEXT BUNDLE ===\n"
+            f"Macro Environment:\n"
+            f"{json.dumps(self._last_gate_result, indent=2) if self._last_gate_result else 'None'}\n\n"
+            f"Company Financials (Last 4 Quarters):\n"
+            f"{financials}\n"
+            f"================================\n\n"
+            f"Evaluate the company's debt, margins, and revenue trends against the Macro Environment risks above. "
+            f"Provide your analysis, and remember to end your response exactly with 'SCORE: <number>'."
+        )
+        return prompt
