@@ -3,7 +3,7 @@ from typing import Iterable
 from decimal import Decimal
 from core.context import Candidate
 from layers.macro_gate import MacroGate
-from layers.scanner import RegimeAwareScanner
+from layers.ml_scanner import MLScanner
 from layers.data_loader import get_financials, get_recent_news
 import json
 
@@ -14,7 +14,7 @@ class EquityAdapter:
 
     def __init__(self):
         self.gate = MacroGate()
-        self.scanner = RegimeAwareScanner()
+        self.scanner = MLScanner(asset_class="EQUITY")
         self._last_gate_result = {}
 
     def macro_gate(self) -> float:
@@ -22,8 +22,7 @@ class EquityAdapter:
         return self._last_gate_result.get("gate_score", 50.0)
 
     def scan(self, universe: Iterable[str]) -> list:
-        hmm_prob = self._last_gate_result.get("hmm_safe_prob", 0.5)
-        return self.scanner.scan(list(universe), hmm_prob)
+        return self.scanner.scan(list(universe))
 
     def auditor_prompt(self, c: Candidate) -> str:
         financials = get_financials(c.symbol)

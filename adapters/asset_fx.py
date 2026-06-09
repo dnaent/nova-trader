@@ -3,6 +3,7 @@ from typing import Iterable
 from decimal import Decimal
 from core.context import Candidate
 from layers.data_loader import get_daily_data, get_recent_news
+from layers.ml_scanner import MLScanner
 import json
 
 class FxAdapter:
@@ -12,6 +13,7 @@ class FxAdapter:
 
     def __init__(self):
         self._last_gate_result = {}
+        self.scanner = MLScanner(asset_class="FX")
 
     def macro_gate(self) -> float:
         """
@@ -47,37 +49,9 @@ class FxAdapter:
 
     def scan(self, universe: Iterable[str]) -> list:
         """
-        Scan major FX pairs for momentum.
+        Scan major FX pairs for ML predicted breakout.
         """
-        candidates = []
-        for symbol in universe:
-            try:
-                df = get_daily_data(symbol, lookback_days=30)
-                if df.empty or len(df) < 10:
-                    continue
-                    
-                current_price = df['Close'].iloc[-1]
-                sma_10 = df['Close'].rolling(window=10).mean().iloc[-1]
-                
-                # Simple momentum score based on distance from 10-day SMA
-                momentum = ((current_price - sma_10) / sma_10) * 100
-                
-                # Normalize momentum to a 0-100 score (rough approximation)
-                score = 50.0 + (momentum * 10.0) 
-                score = max(0.0, min(100.0, score))
-                
-                candidates.append(Candidate(
-                    symbol=symbol,
-                    asset_class="FX",
-                    quant_score=float(score),
-                    price=Decimal(str(current_price)).quantize(Decimal("0.0001"))
-                ))
-            except Exception:
-                continue
-                
-        # Sort by highest score
-        candidates.sort(key=lambda c: c.quant_score, reverse=True)
-        return candidates
+        return self.scanner.scan(list(universe))
 
     def auditor_prompt(self, c: Candidate) -> str:
         """

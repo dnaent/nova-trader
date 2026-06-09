@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import pandas_ta as ta
 import yfinance as yf
 from datetime import datetime, timedelta
 
@@ -71,3 +72,29 @@ def get_recent_news(symbol: str) -> str:
         return "\n".join(parts)
     except Exception as e:
         return f"News data unavailable for {symbol}: {str(e)}"
+
+def get_technical_features(symbol: str, lookback_days: int = 730) -> pd.DataFrame:
+    """Fetch base data and append the 30+ indicator matrix using pandas-ta."""
+    df = get_daily_data(symbol, lookback_days=lookback_days, use_cache=True)
+    if df.empty or len(df) < 50:
+        return pd.DataFrame()
+        
+    try:
+        # We use pandas-ta to append multiple indicators
+        df.ta.rsi(append=True)
+        df.ta.macd(append=True)
+        df.ta.stoch(append=True)
+        df.ta.bbands(append=True)
+        df.ta.atr(append=True)
+        df.ta.ema(length=20, append=True)
+        df.ta.ema(length=50, append=True)
+        df.ta.ema(length=200, append=True)
+        df.ta.adx(append=True)
+        # Ichimoku can return tuple, use direct append safely
+        df.ta.ichimoku(append=True)
+        
+        # Clean up NaNs from lookback periods
+        df = df.dropna()
+        return df
+    except Exception:
+        return pd.DataFrame()

@@ -36,6 +36,8 @@ class Order:
     notional: Decimal
     stop_loss: Optional[Decimal] = None
     take_profit: Optional[Decimal] = None
+    trailing_pct: Optional[Decimal] = None
+    trailing_atr: Optional[Decimal] = None
     meta: dict = field(default_factory=dict)
 
 @dataclass
@@ -122,12 +124,16 @@ def _build_sizing(spec: dict) -> SizingPolicy:
             unit=spec.get("unit", "shares"),
             stop_atr_multiplier=spec.get("stop_atr_multiplier", 2.0),
             take_atr_multiplier=spec.get("take_atr_multiplier", 4.0),
+            trailing_atr_multiplier=spec.get("trailing_atr_multiplier", 2.0),
         )
         
     return NavPctSizing(
         max_per_position_pct=spec.get("max_per_position_pct", 8.0),
         leverage=spec.get("leverage", 1.0),
         unit=spec.get("unit", "shares"),
+        stop_pct=spec.get("stop_pct", 0.05),
+        take_pct=spec.get("take_pct", 0.10),
+        trailing_pct=spec.get("trailing_pct", 0.05),
     )
 
 def _build_guardrails(spec: dict) -> RiskGuardrails:

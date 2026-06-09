@@ -56,12 +56,13 @@ class NavPctSizing:
     in Phase 1 (fractional support is a later refinement). Placeholder brackets.
     """
     def __init__(self, max_per_position_pct: float = 8.0, leverage: float = 1.0,
-                 unit: str = "shares", stop_pct: float = 0.05, take_pct: float = 0.10):
+                 unit: str = "shares", stop_pct: float = 0.05, take_pct: float = 0.10, trailing_pct: float = 0.05):
         self.max_per_position_pct = Decimal(str(max_per_position_pct))
         self.leverage = Decimal(str(leverage))
         self.unit = unit
         self.stop_pct = Decimal(str(stop_pct))
         self.take_pct = Decimal(str(take_pct))
+        self.trailing_pct = Decimal(str(trailing_pct))
 
     def size(self, candidate: Candidate, ctx: AccountContext, gate_score: float) -> Order:
         capacity = gate_capacity(gate_score)
@@ -80,6 +81,7 @@ class NavPctSizing:
             notional=notional,
             stop_loss=(price * (Decimal("1") - self.stop_pct)).quantize(Decimal("0.01")),
             take_profit=(price * (Decimal("1") + self.take_pct)).quantize(Decimal("0.01")),
+            trailing_pct=self.trailing_pct,
             meta={"capacity_factor": str(capacity)},
         )
 
@@ -114,12 +116,13 @@ class AtrSizing:
     Risk Capital = NAV * risk_pct (e.g., 2% of portfolio at risk)
     """
     def __init__(self, risk_pct: float = 2.0, leverage: float = 1.0,
-                 unit: str = "shares", stop_atr_multiplier: float = 2.0, take_atr_multiplier: float = 4.0):
+                 unit: str = "shares", stop_atr_multiplier: float = 2.0, take_atr_multiplier: float = 4.0, trailing_atr_multiplier: float = 2.0):
         self.risk_pct = Decimal(str(risk_pct))
         self.leverage = Decimal(str(leverage))
         self.unit = unit
         self.stop_atr_multiplier = Decimal(str(stop_atr_multiplier))
         self.take_atr_multiplier = Decimal(str(take_atr_multiplier))
+        self.trailing_atr_multiplier = Decimal(str(trailing_atr_multiplier))
 
     def size(self, candidate: Candidate, ctx: AccountContext, gate_score: float) -> Order:
         capacity = gate_capacity(gate_score)
@@ -156,6 +159,7 @@ class AtrSizing:
             notional=notional,
             stop_loss=stop_loss,
             take_profit=take_profit,
+            trailing_atr=self.trailing_atr_multiplier,
             meta={"capacity_factor": str(capacity), "atr": str(atr)}
         )
 
