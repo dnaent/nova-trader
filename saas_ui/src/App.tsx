@@ -1,11 +1,8 @@
+// import TradingDashboard from './components/TradingDashboard';
 import Dashboard from './components/Dashboard';
 
 function App() {
-  return (
-    <div className="app-container">
-      <Dashboard />
-    </div>
-  );
+  return <Dashboard />;
 }
 
 export default App;
