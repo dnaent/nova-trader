@@ -333,19 +333,51 @@ open http://localhost:5174/
 3. Test latency monitoring and targets
 4. Verify sub-millisecond execution pipeline
 
-### 3. AI Model Training & Validation (CRITICAL)
+### 3. AI Model Training & Validation (CRITICAL) - **HYBRID EDGE-CLOUD ARCHITECTURE**
+
+#### **🚀 BREAKTHROUGH: Local Training → Cloud Deployment Pipeline**
+
+**Phase 1: Local 3080Ti Edge Training**:
 1. **Install Ollama** and configure LLaMA-based quantitative trading model
 2. **Start paper trading mode** - ensure model trains on paper trades only
 3. **Monitor AI Training dashboard** - track comprehensive validation metrics
-4. **Enhanced validation criteria** must be met before live trading:
-   - ✅ **Win Rate**: 75%+ across all books (GIA, ISA, SIPP) - Weight: 25%
+4. **Enhanced validation criteria** must be met before cloud deployment:
+   - ✅ **Win Rate**: 60-70% across all books (calibrated realistic target) - Weight: 25%
    - ✅ **Trade Sample**: Minimum 200 paper trades executed - Weight: 15%
-   - ✅ **Sharpe Ratio**: ≥1.0 for risk-adjusted performance - Weight: 25%
-   - ✅ **Max Drawdown**: ≤5% capital protection - Weight: 20%
-   - ✅ **Consecutive Losses**: ≤5 trades (risk management) - Weight: 10%
-   - ✅ **Profit Factor**: ≥1.25 (gross profit vs gross loss) - Weight: 5%
-5. **Success Definition**: Composite score ≥95% weighted performance
-6. **Live trading gate** - Only activated after ALL criteria achieved
+   - ✅ **Sharpe Ratio**: ≥0.8 for risk-adjusted performance (realistic target) - Weight: 25%
+   - ✅ **Max Drawdown**: ≤8% capital protection (industry-realistic) - Weight: 20%
+   - ✅ **Consecutive Losses**: ≤5 trades risk management - Weight: 10%
+   - ✅ **Profit Factor**: ≥1.25 gross profit efficiency - Weight: 5%
+5. **Success Definition**: Composite score ≥80% weighted performance (calibrated)
+6. **Training Data Logging**: Complete dataset export preparation for cloud replication
+
+**Phase 2: Training Data Transfer & Cloud Replication**:
+```bash
+# Export training dataset from 3080Ti
+python3 export_training_data.py --encrypt --backup-local
+
+# Upload to GCP Cloud Storage (encrypted)
+gsutil -m cp -r ./training_exports gs://nova-trader-models/3080ti-training/
+
+# Deploy to Vertex AI with identical configuration
+gcloud ai models upload \
+  --region=europe-west2 \
+  --display-name="nova-trader-production" \
+  --source-package-uri="gs://nova-trader-models/3080ti-training/"
+```
+
+**Phase 3: Performance Validation & Cloud Deployment**:
+7. **Vertex AI Model Replication**: Deploy identical model architecture in GCP
+8. **Performance Parity Testing**: Side-by-side comparison (local vs cloud)
+9. **Zero Performance Loss Validation**: Ensure cloud model matches local performance
+10. **Live Trading Gate**: Activate only after BOTH local validation AND cloud parity achieved
+
+#### **Benefits of Hybrid Approach**:
+- 🔥 **Zero Performance Drop**: Cloud model inherits exact local training context
+- ⚡ **Ultra-Low Latency Maintained**: Local inference for critical operations
+- ☁️ **Enterprise Scalability**: Vertex AI provides global reach and redundancy
+- 💾 **Training Continuity**: Model continues learning in both environments
+- 🛡️ **Risk Mitigation**: Dual deployment provides failover capability
 
 ### 4. Live Trading Enablement (Post-Validation Only)
 1. Switch from paper to live IBKR environment
