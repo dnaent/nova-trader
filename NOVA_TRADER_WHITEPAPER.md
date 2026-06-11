@@ -39,9 +39,9 @@ Layer 3: AI Auditor (Fundamental Analysis)
 Blended Decision (60% Deterministic + 40% AI)
 ```
 
-### 1.2 Unique AI Training Markers
+### 1.2 Universal AI Training Markers
 
-The system learns from **12 distinct market indicators** that traditional trading systems typically analyze in isolation:
+**Critical Architecture**: The AI analyzes **32+ sophisticated indicators** at the **top level** across ALL account types (GIA, ISA, SIPP, Forex), ensuring consistent intelligence regardless of asset class or tax wrapper:
 
 #### **Macro Regime Indicators:**
 1. **HMM Safe State Probability** - Gaussian Hidden Markov Model analyzing SPY return volatility patterns
@@ -49,17 +49,43 @@ The system learns from **12 distinct market indicators** that traditional tradin
 3. **Cross-Asset Correlation Score** - SPY correlation with bonds (TLT) and gold (GLD) safe havens
 4. **Yield Curve Spread** - 10Y-3M treasury spread for economic cycle positioning
 
-#### **Quantitative Scoring Markers:**
-5. **Momentum Strength** - 21-day price momentum in trending regimes
-6. **Mean Reversion Distance** - Bollinger Band proximity in volatile regimes
-7. **Volume-Price Divergence** - Institutional flow analysis
-8. **Sector Rotation Strength** - Relative performance vs sector ETFs
+#### **Technical Analysis Indicators:**
+5. **Simple Moving Average (SMA)** - Multiple timeframe trend identification
+6. **Exponential Moving Average (EMA)** - Short-term and long-term trend analysis
+7. **Relative Strength Index (RSI)** - Overbought/oversold momentum detection
+8. **Moving Average Convergence Divergence (MACD)** - Trend reversal identification
+9. **Bollinger Bands** - Volatility and price breakout analysis
+10. **Stochastic Oscillator** - Price range momentum comparison
+11. **Average True Range (ATR)** - Market volatility measurement for position sizing
+12. **Fibonacci Retracement** - Key reversal level identification
+
+#### **Advanced Pattern Recognition:**
+13. **Candlestick Patterns** - Doji, Engulfing, Hammer pattern detection
+14. **Support and Resistance Levels** - Dynamic price level identification
+15. **Price Action Analysis** - Multi-timeframe trend confirmation
+16. **Volume Spikes** - Institutional flow and breakout confirmation
+17. **Seasonality Effects** - Calendar-based market behavior patterns
+
+#### **Fundamental Analysis Markers:**
+18. **News Sentiment Analysis** - Real-time news impact scoring
+19. **Economic Calendar Events** - High-impact event avoidance protocols
+20. **Central Bank Policy Tracking** - Interest rate decision impact analysis
+21. **4-Quarter Financial Data** - Trailing fundamental health assessment
+22. **Sector Rotation Strength** - Relative performance vs sector ETFs
+
+#### **Multi-Asset Correlation:**
+23. **Currency Pair Correlation** - EUR/USD, GBP/USD, USD/JPY relationship analysis
+24. **Cross-Market Exposure** - Equity, bond, commodity correlation mapping
+25. **Safe Haven Flow Analysis** - Gold, bonds, USD flight-to-quality detection
+26. **Commodity Impact Scoring** - Oil, precious metals influence on currencies
 
 #### **Risk Management Indicators:**
-9. **Pearson Correlation Matrix** - 90-day rolling correlation across all open positions
-10. **NAV-Scaled Position Sizing** - Dynamic allocation based on portfolio size and gate capacity
-11. **Drawdown-Adjusted Exposure** - Real-time maximum drawdown monitoring per account book
-12. **Consecutive Loss Tracking** - System shutdown triggers for risk protection
+27. **Pearson Correlation Matrix** - 90-day rolling correlation across all open positions
+28. **NAV-Scaled Position Sizing** - Dynamic allocation based on portfolio size and gate capacity
+29. **Drawdown-Adjusted Exposure** - Real-time maximum drawdown monitoring per account book
+30. **Consecutive Loss Tracking** - System shutdown triggers for risk protection
+31. **Portfolio Concentration Limits** - Maximum exposure per position/sector
+32. **Volatility-Based Position Sizing** - ATR-adjusted risk allocation
 
 ### 1.3 Multi-Model AI Integration
 
@@ -95,15 +121,29 @@ Each AI provider receives identical **Inference Context Bundles** containing:
 
 **Success Threshold**: 95% weighted composite score (vs. 70% industry standard)
 
-### 2.2 Multi-Book Training Architecture
+### 2.2 Universal Multi-Asset Architecture
 
-**Unique Feature**: Simultaneous training across UK tax-advantaged accounts:
+**Revolutionary Design**: Single AI engine analyzing **32+ top-level indicators** across ALL asset classes and account types:
 
-- **ISA Book**: Tax-free growth, aggressive equity focus
-- **SIPP Book**: Pension optimization, balanced allocation
-- **GIA Book**: Tax-efficient harvesting with UK CGT integration (£3,000 AEA, 18%/24% rates)
+#### **Cross-Book Intelligence Application:**
+- **ISA Book**: All 32 indicators applied to tax-free equity/ETF strategies
+- **SIPP Book**: All 32 indicators applied to pension-optimized balanced allocation
+- **GIA Book**: All 32 indicators applied with UK CGT optimization (£3,000 AEA, 18%/24% rates)
+- **Forex Book**: All 32 indicators applied to currency pair trading (EUR/USD, GBP/USD, etc.)
 
-Each book maintains **independent validation scoring** while contributing to the collective AI learning model.
+#### **Unified Indicator Processing:**
+- **Macro Regime Analysis**: Applied consistently across equities, bonds, currencies
+- **Technical Patterns**: Unified candlestick, RSI, MACD analysis for all asset classes
+- **Risk Correlation**: Real-time correlation matrices spanning ALL books and asset types
+- **Fundamental Analysis**: Economic calendar, news sentiment across all markets
+
+#### **Cross-Asset Learning Benefits:**
+- **Forex volatility indicators** enhance equity risk management
+- **Equity sector rotation** informs currency pair selection
+- **Bond yield analysis** optimizes both equity and forex timing
+- **Multi-asset correlation** prevents concentration risk across ALL books
+
+Each book maintains **independent validation scoring** while benefiting from **universal AI intelligence** trained across all asset classes.
 
 ---
 
@@ -114,34 +154,40 @@ Each book maintains **independent validation scoring** while contributing to the
 | Feature | Nova Trader | QuantConnect | Zipline | MetaTrader 5 | TradingView |
 |---------|-------------|--------------|---------|--------------|-------------|
 | **AI Integration** | ✅ Multi-provider | ❌ None | ❌ None | ❌ Basic | ❌ Limited |
+| **Universal Indicators** | ✅ 32+ Cross-Asset | ❌ Asset-Specific | ❌ Asset-Specific | ❌ Asset-Specific | ❌ Manual Only |
+| **Multi-Book Analysis** | ✅ GIA/ISA/SIPP/Forex | ❌ Single Account | ❌ Single Account | ❌ Single Account | ❌ Single Account |
 | **Regime Detection** | ✅ HMM + VIX | ❌ Manual | ❌ Manual | ❌ Manual | ❌ Manual |
 | **Paper Validation** | ✅ 200+ trades | ❌ Optional | ❌ Optional | ❌ Basic | ❌ None |
 | **Tax Integration** | ✅ UK CGT Native | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Sub-ms Latency** | ✅ 0.8ms Target | ❌ Variable | ❌ Variable | ❌ 10-50ms | ❌ N/A |
-| **Risk Correlation** | ✅ Real-time | ❌ Basic | ❌ Basic | ❌ Basic | ❌ Manual |
+| **Cross-Asset Risk** | ✅ All Books Unified | ❌ Asset Siloed | ❌ Asset Siloed | ❌ Asset Siloed | ❌ Manual |
 
 ### 3.2 Unique Value Propositions
 
-#### **1. Hybrid Intelligence Architecture**
-- First system to blend deterministic quantitative analysis with multi-provider AI reasoning
-- 60/40 split ensures mathematical rigor while capturing market nuance
+#### **1. Universal Intelligence Architecture**
+- **INDUSTRY FIRST**: Single AI analyzing 32+ indicators across ALL asset classes (equities, forex, bonds, commodities)
+- **Cross-Asset Learning**: Forex volatility enhances equity decisions; equity trends inform currency trades
+- **Unified Risk Management**: Real-time correlation analysis across GIA, ISA, SIPP, and Forex books simultaneously
 
-#### **2. Mandatory Validation Protocol**
-- Industry's most stringent paper trading requirements
+#### **2. Top-Level Indicator Processing**
+- **Universal Application**: All 32 indicators applied to every asset class and account type
+- **Cross-Pollination**: Technical patterns identified in forex enhance equity analysis and vice versa
+- **Holistic Market View**: Macro regime detection informs decisions across ALL books
+
+#### **3. Multi-Book Optimization**
+- **Simultaneous Analysis**: AI optimizes across ISA (tax-free), SIPP (pension), GIA (CGT), and Forex simultaneously
+- **Tax-Aware Intelligence**: AI understands tax implications and optimizes accordingly
+- **Portfolio Synergy**: Decisions in one book consider positions and risks across all other books
+
+#### **4. Mandatory Universal Validation**
+- Industry's most stringent paper trading requirements applied across ALL asset classes
 - 95% composite score threshold vs. 70% industry standard
-- Prevents premature live trading deployment
+- 200+ trades required across ALL books before live trading authorization
 
-#### **3. Multi-Regime Adaptation**
-- Automatic strategy switching between trending and mean-reverting market conditions
-- HMM-based regime detection with real-time probability scoring
-
-#### **4. Tax-Native Design**
-- Built-in UK tax optimization across ISA, SIPP, and GIA accounts
-- Automatic CGT allowance tracking and loss harvesting
-
-#### **5. Ultra-Low Latency Focus**
-- Sub-millisecond execution pipeline targeting professional trading standards
-- Hardware optimization guidance for kernel bypass and CPU affinity
+#### **5. Cross-Asset Regime Adaptation**
+- Automatic strategy switching across equities, forex, and bonds based on unified market analysis
+- HMM-based regime detection applied universally to all asset classes
+- Single intelligence engine prevents conflicting signals across different markets
 
 ---
 
@@ -190,13 +236,28 @@ MUST end with: SCORE: <number>
 3. **Google Gemini** (Backup): Alternative perspective validation
 4. **Stub Logic** (Emergency): Conservative 50.0 scoring if all APIs fail
 
-### 4.3 Continuous Learning Framework
+### 4.3 Context-Aware Training Framework
 
-**Real-Time Model Updates:**
-- Trade outcome feedback loops update confidence scoring
+**CRITICAL: AI Model Trained with Full Project Scope Understanding**
+
+#### **Complete Context Integration:**
+- **Universal Intelligence**: Model trained understanding it must analyze 32+ indicators across ALL asset classes
+- **Ultra-Low Latency Awareness**: Training optimized for 0.8ms decision-making requirements
+- **Multi-Book Context**: Model understands tax implications across GIA, ISA, SIPP, Forex accounts
+- **Performance Standards**: Training targets 95% composite validation score vs industry 70%
+
+#### **Hardware-Optimized Training:**
+- **3080Ti-Specific**: Model architecture optimized for RTX 3080Ti inference capabilities
+- **Kernel Bypass Ready**: Training includes hardware optimization awareness
+- **Memory Efficiency**: Model optimized for <1GB RAM footprint during live trading
+- **CPU Affinity**: Training optimized for dedicated core utilization
+
+#### **Real-Time Model Updates:**
+- Trade outcome feedback loops update confidence scoring across ALL asset classes
 - Regime detection accuracy monitoring with HMM parameter tuning
-- Correlation matrix recalibration based on market evolution
-- Risk guardrail threshold adjustment based on performance history
+- Correlation matrix recalibration based on cross-asset market evolution
+- Risk guardrail threshold adjustment based on multi-book performance history
+- Ultra-low latency performance monitoring and optimization
 
 ---
 
