@@ -37,6 +37,7 @@ import {
   ArrowDownRight,
   DollarSign,
   PieChart,
+  Target,
 } from 'lucide-react';
 import {
   Line,
@@ -53,6 +54,10 @@ import { BentoGrid, BentoItem } from './layout/BentoGrid';
 import AICopilot from './AICopilot';
 import TradingBrokerSettings from './TradingBrokerSettings';
 import LatencyMonitor from './LatencyMonitor';
+import OrderManagement from './OrderManagement';
+import RiskManagement from './RiskManagement';
+import AIModelTraining from './AIModelTraining';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 // Enhanced mock data for infrastructure demo
 const portfolioData = [
@@ -234,7 +239,7 @@ function PositionRow({ position }: { position: typeof positions[0] }) {
 
 export default function Dashboard() {
   // State management for dashboard
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'brokers' | 'latency' | 'engine' | 'ai' | 'risk' | 'forex'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'risk' | 'training' | 'analytics' | 'brokers' | 'latency' | 'engine'>('overview');
 
   const [engineStatus, setEngineStatus] = useState({
     active: true,
@@ -246,6 +251,38 @@ export default function Dashboard() {
   const [copilotState, setCopilotState] = useState({
     isVisible: true,
     isMinimized: true,
+  });
+
+  // Emergency stop state
+  const [emergencyStop, setEmergencyStop] = useState(false);
+
+  // Keyboard shortcuts for ultra-fast trading
+  useKeyboardShortcuts({
+    onQuickBuy: () => {
+      // Quick buy functionality - could trigger modal or execute market order
+      console.log('Quick Buy triggered');
+    },
+    onQuickSell: () => {
+      // Quick sell functionality
+      console.log('Quick Sell triggered');
+    },
+    onEmergencyStop: () => {
+      setEmergencyStop(true);
+      console.log('EMERGENCY STOP ACTIVATED');
+    },
+    onFocusSymbol: () => {
+      // Focus symbol input in order management
+      const symbolInput = document.querySelector('input[placeholder="NVDA"]') as HTMLInputElement;
+      if (symbolInput) {
+        symbolInput.focus();
+      }
+    },
+    onToggleAI: () => {
+      setCopilotState(prev => ({ ...prev, isVisible: !prev.isVisible }));
+    },
+    onSwitchTab: (tab) => {
+      setActiveTab(tab as any);
+    }
   });
 
   const [liveMetrics, setLiveMetrics] = useState({
@@ -377,13 +414,13 @@ export default function Dashboard() {
             <Stack direction="row" spacing={1}>
               {[
                 { key: 'overview', label: 'Overview', icon: Activity },
+                { key: 'orders', label: 'Order Management', icon: Target },
+                { key: 'risk', label: 'Risk Monitor', icon: Shield },
+                { key: 'training', label: 'AI Training', icon: Brain },
                 { key: 'analytics', label: 'Analytics', icon: BarChart3 },
                 { key: 'brokers', label: 'Broker APIs', icon: Settings },
                 { key: 'latency', label: 'Latency Monitor', icon: Zap },
-                { key: 'ai', label: 'AI Performance', icon: Brain },
-                { key: 'risk', label: 'Risk Monitor', icon: Shield },
                 { key: 'engine', label: 'Engine Config', icon: Settings },
-                { key: 'forex', label: 'Forex Hub', icon: Globe },
               ].map(({ key, label, icon: Icon }) => (
                 <Button
                   key={key}
@@ -663,6 +700,15 @@ export default function Dashboard() {
             </BentoGrid>
           )}
 
+          {/* Order Management Tab */}
+          {activeTab === 'orders' && <OrderManagement />}
+
+          {/* Risk Management Tab */}
+          {activeTab === 'risk' && <RiskManagement />}
+
+          {/* AI Model Training Tab */}
+          {activeTab === 'training' && <AIModelTraining />}
+
           {/* Trading Broker Settings Tab */}
           {activeTab === 'brokers' && <TradingBrokerSettings />}
 
@@ -670,7 +716,7 @@ export default function Dashboard() {
           {activeTab === 'latency' && <LatencyMonitor />}
 
           {/* Other tabs placeholder */}
-          {!['overview', 'brokers', 'latency'].includes(activeTab) && (
+          {!['overview', 'orders', 'risk', 'training', 'brokers', 'latency'].includes(activeTab) && (
             <Card variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
               <Typography level="h4" sx={{ mb: 2 }}>
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Tab
