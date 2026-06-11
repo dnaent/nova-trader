@@ -64,6 +64,67 @@
 - **Professional Trading Standards**: Model trained to institutional-grade performance benchmarks
 - **Risk-First Design**: Primary objective is capital preservation, secondary is profit maximization
 
+## 🌐 GOOGLE CLOUD PLATFORM INFRASTRUCTURE (PREFERRED)
+
+### **Cloud Architecture & Deployment Strategy**
+- **Platform**: Google Cloud Platform (GCP) - preferred over AWS for EU operations
+- **Region**: Europe-West2 (London) for GDPR compliance and UK market proximity
+- **Compute**: Hybrid approach with local 3080Ti edge inference + GCP services
+
+### **Core GCP Services Integration**:
+```
+🔥 COMPUTE & DEPLOYMENT:
+├── Compute Engine: High-performance VM instances for 3080Ti deployment
+├── Cloud Run: Serverless containers for API services (ultra-low latency)
+├── Google Kubernetes Engine: Container orchestration for scalable infrastructure
+└── Cloud Functions: Event-driven market data processing
+
+💾 STORAGE & DATABASES:
+├── Cloud SQL: PostgreSQL for transaction history and audit logs
+├── Firestore: NoSQL for real-time market data and user sessions
+├── Cloud Storage: AI model artifacts, backups, static assets
+└── Memorystore: Redis for ultra-low latency caching (sub-millisecond)
+
+🤖 AI/ML & ANALYTICS:
+├── Vertex AI: Model training, deployment, and monitoring
+├── AI Platform: Custom model serving for local 3080Ti integration
+├── BigQuery: High-performance analytics for trading pattern analysis
+└── Cloud Monitoring: Real-time performance and latency tracking
+
+🔐 SECURITY & COMPLIANCE:
+├── Cloud IAM: Fine-grained access control for trading operations
+├── Secret Manager: Secure credential storage for broker APIs
+├── VPC Networks: Private networking for trading infrastructure
+├── Cloud Armor: DDoS protection and security policies
+└── Audit Logs: Comprehensive compliance tracking
+
+🌐 REAL-TIME & NETWORKING:
+├── Cloud Pub/Sub: Real-time message streaming for market data
+├── Cloud Load Balancing: Global load balancing for trading endpoints
+├── Cloud CDN: Content delivery optimization
+└── Network Service Tiers: Premium tier for ultra-low latency
+```
+
+### **Deployment Pipeline**:
+```bash
+# Deploy to GCP Cloud Run for production scalability
+gcloud run deploy trading-engine --image gcr.io/nova-trader/engine:latest
+gcloud run deploy ai-inference --image gcr.io/nova-trader/ai:latest
+gcloud sql instances create nova-trader-db --database-version=POSTGRES_13
+```
+
+### **Cost Optimization & Scaling**:
+- **Sustained Use Discounts**: Automatic discounts for long-running workloads
+- **Preemptible Instances**: Cost-effective compute for non-critical operations
+- **Auto-scaling**: Cloud Run scales from 0 to thousands of instances automatically
+- **European Data Residency**: GDPR compliance with data sovereignty
+
+### **Integration Benefits**:
+- **Local 3080Ti**: Ultra-fast edge inference for microsecond decisions
+- **Cloud Services**: Scalable infrastructure for data processing and storage
+- **Hybrid Performance**: Best of both worlds - edge speed + cloud scale
+- **Enterprise Security**: Bank-grade security with GCP enterprise features
+
 ## CRITICAL: Technical Feasibility & Optimization Requirements (2026-06-11)
 
 ### **CLAUDE FABLE OPTIMIZATION MANDATE**

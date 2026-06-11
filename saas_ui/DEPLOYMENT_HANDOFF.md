@@ -38,6 +38,42 @@
 
 ## 🔧 Deployment Requirements
 
+### **🌐 Google Cloud Platform Integration (Preferred Infrastructure)**
+
+#### **Cloud Services Configuration**:
+```bash
+# GCP Project Setup
+gcloud config set project nova-trader-production
+gcloud config set compute/region europe-west2
+gcloud config set compute/zone europe-west2-a
+
+# Service Authentication
+gcloud auth application-default login
+gcloud services enable compute.googleapis.com
+gcloud services enable run.googleapis.com
+gcloud services enable sql.googleapis.com
+gcloud services enable storage.googleapis.com
+```
+
+#### **Infrastructure Components**:
+- **Compute Engine**: High-performance VM for 3080Ti deployment (n1-standard-8, 32GB RAM)
+- **Cloud Run**: Serverless API services for trading endpoints
+- **Cloud SQL**: PostgreSQL for transaction history and audit logs
+- **Firestore**: NoSQL for real-time market data and user sessions
+- **Cloud Storage**: Secure blob storage for AI models and backups
+- **Memorystore**: Redis for ultra-low latency caching (sub-millisecond)
+- **Cloud Monitoring**: Real-time performance and latency tracking
+- **Secret Manager**: Secure storage for IBKR and broker API credentials
+- **VPC Networks**: Private networking for trading infrastructure
+- **Cloud Load Balancing**: Global load balancing for trading endpoints
+
+#### **Security & Compliance (GDPR Ready)**:
+- **European Data Residency**: All data stored in Europe-West2 (London)
+- **Cloud IAM**: Fine-grained access control for trading operations
+- **Cloud Armor**: DDoS protection and security policies
+- **Audit Logs**: Comprehensive compliance tracking for financial regulations
+- **Network Security**: Private Google Access for secure VM communication
+
 ### Windows 3080Ti Setup Requirements:
 1. **Node.js 18+** for React development server
 2. **Ollama** for local AI model inference (LLaMA-based trading model)
@@ -53,6 +89,41 @@
 # Memory Page Locking (avoid swap delays)
 # Network Hardware Timestamping (NIC-level precision)
 # Kernel Bypass Networking (direct hardware access)
+```
+
+### **🚀 GCP Deployment Commands**:
+```bash
+# Deploy trading services to Cloud Run
+gcloud run deploy trading-engine \
+  --image gcr.io/nova-trader-production/trading-engine:latest \
+  --region europe-west2 \
+  --platform managed \
+  --memory 2Gi \
+  --concurrency 1000 \
+  --max-instances 10
+
+# Deploy AI model inference service
+gcloud run deploy ai-inference \
+  --image gcr.io/nova-trader-production/ai-inference:latest \
+  --region europe-west2 \
+  --platform managed \
+  --memory 4Gi \
+  --cpu 2 \
+  --max-instances 5
+
+# Create Cloud SQL instance for transaction history
+gcloud sql instances create nova-trader-db \
+  --database-version=POSTGRES_13 \
+  --tier=db-custom-4-16384 \
+  --region=europe-west2 \
+  --storage-size=100GB \
+  --storage-type=SSD
+
+# Create Memorystore Redis instance for caching
+gcloud redis instances create nova-trader-cache \
+  --size=5 \
+  --region=europe-west2 \
+  --redis-version=redis_6_x
 ```
 
 ## 📁 File Structure
@@ -278,17 +349,29 @@ open http://localhost:5174/
 
 ### 4. Live Trading Enablement (Post-Validation Only)
 1. Switch from paper to live IBKR environment
-2. Configure risk limits and position sizing
-3. Test emergency stop functionality
-4. Enable real-time market data feeds
-5. **Verify AI model approval** in training dashboard
+2. Configure risk limits and position sizing via **Cloud Run services**
+3. Test emergency stop functionality with **Cloud Functions triggers**
+4. Enable real-time market data feeds via **Cloud Pub/Sub**
+5. **Verify AI model approval** in training dashboard via **Vertex AI**
+6. **GCP Production Readiness**:
+   - Deploy services to Cloud Run with auto-scaling
+   - Configure Cloud Load Balancer for high availability
+   - Enable Cloud Armor for DDoS protection
+   - Set up Cloud Monitoring alerts for trading anomalies
+   - Configure Cloud SQL failover and backups
 
 ### 5. Production Monitoring
-1. Monitor real-time latency metrics
-2. Track order execution performance
-3. Verify risk management effectiveness
-4. **Continuous AI model performance tracking**
-5. Optimize based on live trading data
+1. Monitor real-time latency metrics via **Cloud Monitoring**
+2. Track order execution performance with **custom metrics**
+3. Verify risk management effectiveness using **Cloud Logging**
+4. **Continuous AI model performance tracking** via **Vertex AI**
+5. Optimize based on live trading data using **BigQuery Analytics**
+6. **GCP-specific monitoring**:
+   - Cloud Run service latency and error rates
+   - Compute Engine VM performance metrics
+   - Cloud SQL connection pooling and query performance
+   - Memorystore Redis hit rates and latency
+   - Network Service Tier premium routing performance
 
 ## ⚠️ Important Notes
 
