@@ -64,6 +64,42 @@
 - **Professional Trading Standards**: Model trained to institutional-grade performance benchmarks
 - **Risk-First Design**: Primary objective is capital preservation, secondary is profit maximization
 
+## CRITICAL: Technical Feasibility & Optimization Requirements (2026-06-11)
+
+### **CLAUDE FABLE OPTIMIZATION MANDATE**
+- **Feasibility Scrutiny**: Complete technical analysis available in `NOVA_TRADER_FEASIBILITY_SCRUTINY.md`
+- **Reality Calibration Required**: Current performance targets need systematic adjustment
+- **3080Ti Deployment**: Must address computational and latency constraints
+
+### **IMMEDIATE OPTIMIZATION PRIORITIES**:
+1. **Latency Targets Adjustment**:
+   - Current 0.8ms claim → Realistic 15-30ms (still excellent for retail)
+   - Market data processing: 5ms (vs 0.12ms claim)
+   - Order execution pipeline: 15ms total (vs 0.8ms claim)
+
+2. **AI Performance Recalibration**:
+   - Win rate: 60-70% (vs 75% claim) - more realistic for industry standards
+   - Sharpe ratio: 0.8 (vs 1.0 claim) - achievable with proper risk management
+   - Max drawdown: 8% (vs 5% claim) - realistic for retail trading
+   - Composite validation: 80% (vs 95% claim) - still above industry 70%
+
+3. **Universal Intelligence Optimization**:
+   - Tiered indicator system: 8-12 core indicators initially (vs all 32)
+   - Smart selection based on market conditions and computational resources
+   - Progressive rollout: Phase 1 (core) → Phase 2 (enhanced) → Phase 3 (advanced)
+
+### **CLAUDE FABLE ACTION ITEMS**:
+- **Phase 1**: Reality calibration of all performance targets and documentation
+- **Phase 2**: Implementation of tiered indicator system with smart selection
+- **Phase 3**: Market regime-based adaptive performance scaling
+- **Success Criteria**: Achieve realistic targets consistently before live deployment
+
+### **TECHNICAL CONSTRAINTS ACKNOWLEDGMENT**:
+- **Python overhead**: Interpreted language limits vs C++/FPGA HFT systems
+- **Network latency**: Home internet to IBKR servers introduces 5-20ms minimum
+- **Computational complexity**: 32+ indicators across all assets requires optimization
+- **Market reality**: 95% of retail algorithmic trading attempts fail - conservative approach essential
+
 ## Phase 4 & 5 Additions
 - **Risk Guardrails**: Deterministic rules integrated directly into `core/engine.py` using the `RiskGuardrails` dataclass. Tracks Max Drawdown and Daily Loss Caps directly via the `nav_history` ledger. Evaluated *per-book* dynamically.
 - **Mathematical Correlation**: The engine enforces a strict mathematical correlation check. `check_correlation()` in `core/risk.py` uses `yfinance` to compute a 90-day Pearson correlation matrix against all open positions to prevent over-exposure.

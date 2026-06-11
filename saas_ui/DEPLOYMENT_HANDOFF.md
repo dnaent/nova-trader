@@ -86,9 +86,67 @@ Nova Trader Dashboard:
 ├── AI Training       # Local model validation and performance tracking
 ├── Analytics         # Performance and portfolio analytics
 ├── Broker APIs       # IBKR connection and settings
-├── Latency Monitor   # Sub-millisecond performance tracking
+├── Latency Monitor   # Professional-grade performance tracking
 └── Engine Config     # Trading engine configuration
 ```
+
+## 🚨 CRITICAL: CLAUDE FABLE OPTIMIZATION REQUIREMENTS
+
+### **IMMEDIATE ATTENTION REQUIRED**
+Before proceeding with 3080Ti deployment, **Claude Code + Fable model** must address critical feasibility concerns identified in comprehensive technical analysis.
+
+**Scrutiny Document**: `/NOVA_TRADER_FEASIBILITY_SCRUTINY.md`
+
+### **HIGH PRIORITY CALIBRATIONS NEEDED**:
+
+#### **1. Performance Target Reality Adjustment**
+**Current Claims vs Achievable Reality**:
+```
+Latency Targets:
+├── Current Claim: 0.8ms order execution
+├── Technical Reality: 15-30ms (still excellent for retail)
+├── Industry Context: Professional HFT = 0.1-1ms, Retail avg = 10-50ms
+└── Recommended: 15-30ms with optimization (competitive advantage)
+
+AI Performance:
+├── Current Claim: 75% win rate, 95% composite score
+├── Industry Reality: Professional quants = 55-65%, Retail = 95% failure rate
+├── Recommended: 60-70% win rate, 80% composite score
+└── Still Above Industry: 70% standard, maintains competitive edge
+```
+
+#### **2. Universal Intelligence Optimization**
+**Computational Complexity Management**:
+```
+Indicator Processing:
+├── Current Plan: 32+ indicators across ALL assets simultaneously
+├── Technical Constraint: Exceeds latency budget and memory limits
+├── Recommended Approach: Tiered system with smart selection
+└── Phase 1: 8-12 core indicators, expand progressively
+```
+
+### **CLAUDE FABLE IMMEDIATE ACTION PLAN**:
+
+#### **Phase 1: Reality Calibration (Priority 1)**
+1. **Update UI Components**:
+   - `src/components/LatencyMonitor.tsx`: Adjust to 15-30ms targets
+   - `src/components/AIModelTraining.tsx`: Set realistic 60-70% win rate
+   - All documentation: Replace unrealistic performance claims
+
+2. **Implement Tiered Indicator System**:
+   - `core/engine.py`: Add smart indicator selection logic
+   - `layers/scanner.py`: Implement computational priority system
+   - Create progressive indicator rollout framework
+
+3. **Market Regime Adaptive Performance**:
+   - Adjust expectations based on VIX and market conditions
+   - Implement dynamic performance scaling
+   - Add realistic benchmarking against industry standards
+
+#### **Technical Feasibility Score: 75% (Conditionally Sound)**
+**Strengths**: Solid architecture, genuine UK market differentiation, working proof-of-concept
+**Concerns**: Overly ambitious targets need systematic adjustment
+**Recommendation**: Proceed with realistic recalibration
 
 ## 🚀 Startup Commands
 
