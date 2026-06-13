@@ -7,6 +7,12 @@
 ehthumbs.db
 Thumbs.db
 
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
 # Node modules and dependencies
 node_modules/
 npm-debug.log*

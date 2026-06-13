@@ -1,13 +1,17 @@
-numpy
-pandas
-yfinance==0.2.37
-hmmlearn==0.3.2
-scikit-learn==1.4.1.post1
-scipy==1.12.0
-openai==1.14.0
-anthropic==0.21.3
+# Nova Trader engine dependencies — modernized for the Windows RTX 3080 Ti
+# deployment machine (numpy 2 stack). The original numpy<2 pins were retired
+# because the classic `pandas-ta` was removed from PyPI/GitHub; we use the
+# maintained `pandas-ta-classic` fork (same `.ta` accessor API).
+numpy==2.4.6
+pandas==2.2.3
+yfinance==1.4.1
+hmmlearn==0.3.3
+scikit-learn==1.9.0
+scipy==1.17.1
+openai==2.41.1
+anthropic==0.109.1
 google-generativeai==0.4.1
 rich
 pyyaml
 pytest
-pandas-ta
+pandas-ta-classic==0.6.20

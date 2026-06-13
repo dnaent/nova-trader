@@ -32,7 +32,7 @@ export function useKeyboardShortcuts({
       return;
     }
 
-    const { key, ctrlKey, altKey, shiftKey } = event;
+    const { key, ctrlKey, altKey } = event;
 
     // F1-F12 Function Keys for Ultra-Fast Trading
     switch (key) {

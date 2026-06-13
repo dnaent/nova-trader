@@ -10,4 +10,4 @@ universe:
   - SPY
   - NVDA
   - VWRL
-  - FORD
+  - F      # Ford Motor Co (was "FORD" — not a valid Yahoo ticker)

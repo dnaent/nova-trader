@@ -113,14 +113,13 @@ const theme = extendTheme({
     },
   },
 
-  typography: {
-    // Clean, professional typography
-    fontFamily: {
-      body: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      display: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      code: 'JetBrains Mono, "Fira Code", Consolas, "Liberation Mono", Menlo, Monaco, monospace',
-    },
-    fontSize: {
+  fontFamily: {
+    body: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    display: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    code: 'JetBrains Mono, "Fira Code", Consolas, "Liberation Mono", Menlo, Monaco, monospace',
+  },
+
+  fontSize: {
       xs: '0.75rem',   // 12px - micro data labels
       sm: '0.875rem',  // 14px - secondary text
       md: '1rem',      // 16px - body text
@@ -131,11 +130,11 @@ const theme = extendTheme({
       xl4: '2.25rem',  // 36px - key metrics
     },
     fontWeight: {
-      light: 300,
-      normal: 400,
-      medium: 500,
-      semiBold: 600,
-      bold: 700,
+      xs: 300,
+      sm: 400,
+      md: 500,
+      lg: 600,
+      xl: 700,
     },
     lineHeight: {
       xs: 1.2,
@@ -144,17 +143,13 @@ const theme = extendTheme({
       lg: 1.55,
       xl: 1.6,
     },
-  },
 
   radius: {
-    none: '0px',
     xs: '2px',
     sm: '4px',
     md: '8px',
     lg: '12px',
     xl: '16px',
-    xl2: '20px',
-    xl3: '24px',
   },
 
   shadow: {

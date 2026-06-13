@@ -16,8 +16,11 @@
     "jsx": "react-jsx",
 
     /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    /* noUnusedLocals/noUnusedParameters relaxed: the dashboard is WIP and carries
+       many scaffolded-but-unused imports that get wired up as views are built.
+       eslint still flags unused vars during `npm run lint`. */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },

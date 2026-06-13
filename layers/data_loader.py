@@ -1,6 +1,9 @@
 import os
 import pandas as pd
-import pandas_ta as ta
+try:
+    import pandas_ta as ta  # original library (legacy/dev machines)
+except ImportError:
+    import pandas_ta_classic as ta  # maintained fork; registers the same `.ta` accessor
 import yfinance as yf
 from datetime import datetime, timedelta
 

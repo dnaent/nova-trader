@@ -255,7 +255,7 @@ function QuickOrderEntry({ onSubmitOrder }: { onSubmitOrder: (order: any) => voi
                 <FormLabel>Price</FormLabel>
                 <Input
                   type="number"
-                  step="0.01"
+                  slotProps={{ input: { step: '0.01' } }}
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="950.00"

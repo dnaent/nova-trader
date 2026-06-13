@@ -48,6 +48,7 @@ import {
   CartesianGrid,
   Tooltip,
   PieChart as RechartsPieChart,
+  Pie,
   Cell,
   AreaChart,
   Area,
@@ -493,7 +494,7 @@ export default function RiskManagement() {
                   cx="50%"
                   cy="50%"
                   outerRadius={60}
-                  label={({ name, value }) => `${name}: ${value}%`}
+                  label={({ name, value }: { name?: string; value?: number }) => `${name}: ${value}%`}
                 >
                   {sectorExposure.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

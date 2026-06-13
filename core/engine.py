@@ -200,7 +200,7 @@ def _demo() -> None:
     ]
 
     ledger = Ledger(":memory:")
-    cfg = EngineConfig(universe=["SPY", "NVDA", "VWRL", "FORD"])
+    cfg = EngineConfig(universe=["SPY", "NVDA", "VWRL", "F"])
     Engine(books, [EquityAdapter()], broker, LLMAuditor(backend="local"), ledger, cfg).run_cycle()
 
     print("\n=== Performance summary (per book) ===")
