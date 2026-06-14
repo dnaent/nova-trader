@@ -9,7 +9,7 @@ class Auditor(Protocol):
     def audit(self, prompt: str) -> float: ...
 
 class LLMAuditor:
-    def __init__(self, backend="local", model_name="qwen2.5-7b-instruct", base_url="http://localhost:11434/v1"):
+    def __init__(self, backend="local", model_name="qwen2.5:7b-instruct", base_url="http://localhost:11434/v1"):
         self.backend = backend.lower()
         self.model_name = model_name
         self.base_url = base_url

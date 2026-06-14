@@ -25,6 +25,8 @@
 
 ## AI Model Training Requirements (3080Ti Deployment) - COMPREHENSIVE CONTEXT
 
+> **⚠️ SUPERSEDED in part:** the success metrics in this older section (75%-win-everywhere, 95% composite, 0.8ms latency) are **superseded by "CONFIRMED ARCHITECTURE DECISIONS (2026-06-14)"** at the end of this file — see the per-book success profiles there for the authoritative validation criteria. The "all 32 markers / cross-asset / multi-book context" intent below still holds.
+
 ### **CRITICAL: AI Model Must Be Context-Aware of Full Project Scope**
 
 #### **Universal Intelligence Training Dataset**:
@@ -300,3 +302,62 @@ class VertexAIModelReplicator:
 
 ## UI/UX & Developer Skills Guidelines
 - **Developer Skills**: Repository-specific automation workflows are defined under the `skills/` directory. Each skill folder contains a `SKILL.md` defining its operational rules (e.g. [backtest-optimization](file:///Users/Phantom/Desktop/DNAENT™/Nova_Trader/skills/backtest-optimization/SKILL.md), [ledger-audit](file:///Users/Phantom/Desktop/DNAENT™/Nova_Trader/skills/ledger-audit/SKILL.md)).
+
+## CONFIRMED ARCHITECTURE DECISIONS (2026-06-14)
+
+These supersede earlier conflicting notes where they overlap.
+
+### Two-tier model hierarchy (parent → child)
+- **Local model = PARENT.** Runs on the Windows RTX 3080 Ti, trades the operator's **personal portfolio**, connects to IBKR for low-latency real-time data + execution, and runs a continuous-learning protocol. It is expected to stay slightly ahead of the cloud child.
+- **Cloud model (Claude / Vertex AI) = CHILD.** Powers the SaaS product. **Never touches IBKR.** It consumes the **training data the parent logs** (the `core/ledger.py` decision/trade/NAV store) — parent generates, child reads.
+- **The engine code is identical for both.** Productization is a **backend swap via dependency injection, NOT a fork**: the `Auditor` (`layers/analyst.py`), `BrokerAdapter`, and storage are pluggable. Local = Ollama + ib_async + SQLite; SaaS = Vertex endpoint + per-tenant broker + cloud DB.
+
+### IBKR access
+- Only the **local/parent** model connects to IBKR, via the `gateway` (ib_async → TWS/IB Gateway) path in `adapters/broker_ibkr.py`.
+- **Do NOT build IBKR's official Claude connector (`claude_connector`).** Not needed under this design.
+- Operator **has real-time IBKR market-data subscriptions** — the feed targets true real-time, with yfinance kept only as fallback.
+- Resource-intensive infrastructure is justified **only when it improves the local model's performance** (low-latency data, training throughput).
+
+### HARD safety gate — paper until validated
+- **No personal-portfolio / live trading occurs until the local model is trained on paper trading to a per-book success rate the operator is satisfied with, AND the operator explicitly authorizes going live.** Enforced by: `IBKRAdapter` refusing `mode="live"` with the stub, paper-as-default, the AI Training dashboard live-lock, and the new per-book validation gate.
+
+### Per-book success criteria (replaces the single global 6-metric composite)
+
+**Universal floor (all books):** positive net expectancy after costs + tax (i.e. profit factor > 1 — "make more than you lose"), proven on a statistically meaningful sample that survives **walk-forward + Monte Carlo** (`backtest/walk_forward.py`, `backtest/monte_carlo.py`) so it isn't overfit. All claims are *historically-validated* results — never "100%", never a forward guarantee.
+
+**Wrapper ⊥ Strategy (asset location):** the tax wrapper (tax/contribution/access) is independent of the strategy (risk/reward profile). Only **leveraged Forex is wrapper-locked** (GIA/margin, not ISA/SIPP-eligible). Tax-optimal placement = aggressive/high-turnover strategies in tax-free wrappers (ISA), tax-efficient long-holds in the taxable GIA.
+
+Four distinct success profiles, one per book:
+
+| Book | Profile | Primary "trained correctly" signal | Risk rails | Min sample |
+|---|---|---|---|---|
+| **SIPP** | Income / Compounding (locked pension) | **Win rate ≥70% + Max DD ≤5%** + long-horizon CAGR; dividends **reinvested** | tightest drawdown; lowest turnover | 150 |
+| **ISA** | Growth / High-Reward (tax-free) | **Profit factor ≥1.6 + positive expectancy**; realize freely (no CGT) | DD ≤18%; Sortino ≥1.0; win rate ≥45% (honest, not forced) | 200 |
+| **GIA** | Tax-Efficient Core | **After-tax return ≥ benchmark + low turnover**; tax-alpha via loss-harvesting + £3k AEA; long holds defer the CGT event | DD ≤10%; win rate ≥60% | 150 |
+| **Forex** | Style-agnostic, account-level | **MAR/Calmar + Sortino ≥1.0 + profit factor ≥1.5** | leverage ≤5:1; per-trade risk ≤2%; max consec losses ≤6; DD ≤20% | 300 |
+
+- **Forex is judged at the ACCOUNT/equity-curve level, not the trade level.** Win rate and reward:risk are interchangeable style choices (scalp: many tiny wins; swing: few big wins) that net the same result — so they are **logged for transparency but NOT gated**. The model finds its own style; we judge whether the account compounds safely.
+- **GIA tax-efficiency:** UK CGT has no long-hold discount, but holding longer **defers** the taxable event (gains compound pre-tax). The model learns to minimize unnecessary realizations in the GIA, while realizing freely in the tax-free ISA.
+- A book graduates paper→live only when **its own** profile passes.
+
+### Model dataset / training objective
+Four training objectives, one per book profile. The **wrapper is a context feature** (tax rate, access lock, AEA headroom) so the model times realizations correctly per book. A "good decision" label = the book's primary signal: e.g. in Forex a *losing* trade that respected the 2% risk cap is still **good**; in GIA an unnecessary taxable realization is **bad** even if profitable. Each logged record: `{macro regime + marker snapshot, book_id, candidate, decision + scores, sizing, outcome (R-multiple, PnL, holding period, dividends, tax)}`.
+
+**All 32 markers stay universal across every book.** They are the model's INPUTS (observed everywhere); the per-book success definitions are the OBJECTIVE (what a good decision means). The success profiles never prune markers — they change how the model *weights/interprets* the same 32 per book (e.g. SIPP leans on stability/trend markers, Forex on regime/ATR/momentum). NOTE the current pipeline: the 32-marker matrix (`data_loader.get_technical_features`) feeds the **ML scanner** (Layer 2); the LLM auditor (Layer 3) currently sees only the qualitative bundle (macro + financials + news). Wiring all 32 into the **local model's training records + Inference Context Bundle** is an explicit build item (see roadmap).
+
+### Build roadmap (next session — ALL paper/read-only until each book is validated AND the operator authorizes live)
+1. **Read-only IBKR real-time data feed** — add `ib_async`, a persistent TWS connection manager, and a hot-path feed replacing yfinance for prices (scanner + macro gate); keep yfinance as fallback. Real-time subscriptions confirmed. Executes nothing.
+2. **Wire the Forex book** — add a FOREX book to `portfolio.yaml` (`tax_policy: uk_cgt`, leverage ≤5:1, per-trade risk ≤2%), register `FxAdapter` alongside `EquityAdapter` in the engine, add currency pairs to the universe, use `AtrSizing` (leverage/ATR-aware).
+3. **Per-book validation layer** — encode the four success profiles + universal floor (profit factor > 1, survives `walk_forward.py` + `monte_carlo.py`). A book graduates paper→live only when **its own** profile passes.
+4. **Training-dataset / feature enrichment** — ensure **all 32 markers** flow into the local/parent model's training records & Inference Context Bundle (today they feed only the ML scanner). This dataset is the **parent→child bridge** the cloud model reads.
+5. **(Later) Vertex child** — context/RAG injection first, fine-tune later; strictly tenant-isolated.
+
+### Forex book
+- `adapters/asset_fx.py` (`FxAdapter`) is fully implemented (DXY-proxy macro gate, FX scanner, FX auditor prompt). **It must be wired in**: add a FOREX book to `portfolio.yaml`, register `FxAdapter` in the engine alongside `EquityAdapter`, add currency pairs to the universe, and give it an FX-appropriate (leverage/ATR-aware) sizing policy with a leverage cap (TBD — propose conservative default, e.g. ≤5:1). FX/options must NEVER be added to ISA/SIPP allowed_assets.
+- **Tax — DECIDED:** both **GIA and Forex** books use `tax_policy: uk_cgt` (CGT applies to spot FX gains for a UK individual). ISA/SIPP remain `null` (tax-sheltered).
+
+### SaaS productization notes
+- **Vertex "access" to training data = either (a) fine-tune a Vertex-hosted open model on the exported dataset, or (b) inject the data as context/RAG via the existing "Inference Context Bundle".** Foundation models do not share weights with the local Ollama model. Recommended path: (b) first (fast, no training infra), (a) later as the moat.
+- **Regulatory (UK FCA) — DECIDED:** the SaaS is positioned as a **signals / decision-support tool** (the customer reviews and executes) — the least-regulatory-hurdle route, avoiding discretionary-management authorization. The cloud child **advises only; never executes**. Whitepaper + all product copy must reflect this stance and avoid any "we trade for you / managed" language.
+- **No guaranteed performance:** frame success as **historically validated against the per-book criteria**, never a promise (markets are non-stationary). The validation gate is the honest trust signal.
+- **Tenant data isolation:** the child trains only on the parent's curated export — never cross-tenant. Per-tenant DB isolation; no customer's positions/PII ever enter another tenant's model context. Design into the storage layer from day one.

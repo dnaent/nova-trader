@@ -1,5 +1,7 @@
 # Nova Trader SaaS UI - 3080Ti Deployment Handoff
 
+> **✅ 3080 Ti BRING-UP COMPLETE (2026-06-14).** Environment is live on the RTX 3080 Ti: Python 3.12 `.venv` (modernized numpy-2 stack, 20/20 tests), saas_ui builds + dev server runs, Ollama + `qwen2.5:7b-instruct` serving the local Layer-3 auditor (verified end-to-end on paper). Forward architecture + build roadmap are authoritative in the repo root `CLAUDE.md` → "CONFIRMED ARCHITECTURE DECISIONS (2026-06-14)". NOTE: the aspirational figures in this handoff (0.8ms latency, 75%-win-everywhere) are superseded by the per-book success profiles and realistic latency targets recorded there. No live trading until paper-validation + operator go-ahead.
+
 ## 📋 Executive Summary
 
 **Status**: MacBook Pro infrastructure **COMPLETE** ✅
