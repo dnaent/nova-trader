@@ -37,11 +37,21 @@ books:
     ibkr_account_id: "U_SIPP_PLACEHOLDER"
     allowed_assets: ["EQUITY", "ETF"]   # long-term ETFs preferred
     tax_policy: null
+    # SIPP runs the LOW-TURNOVER allocation strategy (not the tactical scanner):
+    # hold a broad/quality ETF core while the regime is favourable, de-risk to cash
+    # when it weakens. Matches the pension objective (income/compounding, tightest
+    # drawdown) and its strict 70%-win / <=5%-DD profile.
+    strategy: allocation
+    gate_min: 75                  # per-book: only hold in strong regimes
+    aggressive_liquidation: true  # regime de-risk: close to cash when gate < 75
     sizing:
       type: nav_pct
-      max_per_position_pct: 6
+      max_per_position_pct: 90    # buy-and-hold the core holding
       leverage: 1.0
       unit: shares
+      stop_pct: 0.30             # wide: exits are regime-driven, not stop-driven
+      take_pct: 10.0             # effectively no take-profit (hold long-term)
+      trailing_pct: 0.30
 
   - book_id: ibkr_gia_equity
     wrapper: GIA

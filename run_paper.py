@@ -28,6 +28,7 @@ from core.ledger import Ledger
 from adapters.broker_ibkr import IBKRAdapter
 from adapters.asset_equity import EquityAdapter
 from adapters.asset_fx import FxAdapter
+from adapters.asset_allocation import AllocationAdapter
 from adapters.ibkr_feed import IBKRDataFeed
 from layers.analyst import LLMAuditor
 from backtest.validation import validate_from_ledger
@@ -65,7 +66,8 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
 
     auditor = LLMAuditor(backend="local", model_name=model_name)
     ledger = Ledger(db_path)
-    engine = Engine(books, [EquityAdapter(), FxAdapter()], broker, auditor, ledger, cfg)
+    engine = Engine(books, [EquityAdapter(), FxAdapter(), AllocationAdapter()],
+                    broker, auditor, ledger, cfg)
     return engine, books, ledger, feed
 
 

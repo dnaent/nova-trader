@@ -39,6 +39,7 @@ from core.ledger import Ledger
 from adapters.broker_ibkr import IBKRAdapter
 from adapters.asset_equity import EquityAdapter
 from adapters.asset_fx import FxAdapter
+from adapters.asset_allocation import AllocationAdapter
 from layers.analyst import NeutralAuditor
 from backtest.validation import validate_from_ledger
 
@@ -166,8 +167,8 @@ def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 
         broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs=dict(start_navs))
         broker.connect()
         ledger = Ledger(db_path)
-        engine = Engine(books, adapters or [EquityAdapter(), FxAdapter()], broker,
-                        auditor or NeutralAuditor(), ledger, cfg)
+        engine = Engine(books, adapters or [EquityAdapter(), FxAdapter(), AllocationAdapter()],
+                        broker, auditor or NeutralAuditor(), ledger, cfg)
 
         # Trading calendar from the reference symbol's point-in-time index.
         feed.set_as_of(end)
