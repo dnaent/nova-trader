@@ -142,19 +142,21 @@ def report(books, ledger) -> None:
 
 def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 1,
                exec_threshold: float = 50.0, gate_min: Optional[float] = None,
-               auditor=None, adapters=None,
+               auditor=None, adapters=None, books=None,
                loader: Optional[Callable[[str], pd.DataFrame]] = None,
                calendar_symbol: str = "SPY", do_report: bool = True) -> Ledger:
     """Replay the engine over [start, end]. Returns the (open) Ledger.
 
     `adapters` defaults to the live [EquityAdapter, FxAdapter]; inject custom
-    adapters for testing. `gate_min` overrides the macro-gate floor (else uses
-    config). The caller owns the returned ledger and should close().
+    adapters for testing. `books` defaults to portfolio.yaml; inject modified
+    books for experiments (e.g. tuned sizing) without touching the manifest.
+    `gate_min` overrides the macro-gate floor (else uses config). The caller owns
+    the returned ledger and should close().
     """
     feed = ReplayFeed(loader=loader)
     dl.set_price_feed(feed)
     try:
-        books = load_books("portfolio.yaml")
+        books = books if books is not None else load_books("portfolio.yaml")
         cfg = load_engine_config("config.yaml")
         cfg.exec_threshold = exec_threshold
         if gate_min is not None:
