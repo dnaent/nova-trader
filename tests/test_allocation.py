@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from core.context import AccountContext, NullTaxPolicy, Candidate, load_books
+from core.context import AccountContext, NullTaxPolicy, Candidate, Order, load_books
 from core.engine import Engine, EngineConfig
 from core.ledger import Ledger
 from core.risk import NavPctSizing
@@ -83,6 +83,43 @@ def test_engine_routes_each_book_to_its_strategy():
     assert _symbols(led, "t") == {"TACT"}            # tactical book ran only the tactical adapter
     assert _symbols(led, "a") == {"ALLOC"}           # allocation book ran only the allocation adapter
     led.close()
+
+def test_derisk_hysteresis_holds_through_dip(monkeypatch):
+    """With a de-risk floor below gate_min, a gate in the hold band must NOT
+    liquidate existing positions (anti-whipsaw)."""
+    import layers.data_loader as dl
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U_h": 1000})
+    broker.connect()
+    # entry floor 75, exit floor 65; gate dips to 70 (in the hold band)
+    book = _book("h", strategy="allocation", gate_min=75, aggressive_liquidation=True,
+                 derisk_gate=65)
+    led = Ledger(":memory:")
+    led.record_trade("h", "U_h", "VWRL.L", "BUY", Decimal("1"), Decimal("100"), Decimal("100"))
+    broker.place(Order("h", "U_h", "VWRL.L", "BUY", Decimal("1"), Decimal("100"),
+                       Decimal("100")), book)
+    monkeypatch.setattr(dl, "get_latest_price", lambda s: Decimal("99"))
+    cfg = EngineConfig(universe=["X"], gate_min=40, exec_threshold=50)
+    Engine([book], [_Fake("allocation", "VWRL.L", gate=70.0)], broker,
+           StubAuditor(), led, cfg).run_cycle()
+    assert len(led.open_trades("h")) == 1               # gate 70 in [65,75): held, not liquidated
+
+def test_derisk_hysteresis_liquidates_below_floor(monkeypatch):
+    """Below the de-risk floor, positions ARE liquidated."""
+    import layers.data_loader as dl
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U_h": 1000})
+    broker.connect()
+    book = _book("h", strategy="allocation", gate_min=75, aggressive_liquidation=True,
+                 derisk_gate=65)
+    led = Ledger(":memory:")
+    led.record_trade("h", "U_h", "VWRL.L", "BUY", Decimal("1"), Decimal("100"), Decimal("100"))
+    broker.place(Order("h", "U_h", "VWRL.L", "BUY", Decimal("1"), Decimal("100"),
+                       Decimal("100")), book)
+    monkeypatch.setattr(dl, "get_latest_price", lambda s: Decimal("99"))
+    cfg = EngineConfig(universe=["X"], gate_min=40, exec_threshold=50)
+    Engine([book], [_Fake("allocation", "VWRL.L", gate=60.0)], broker,
+           StubAuditor(), led, cfg).run_cycle()
+    assert led.open_trades("h") == []                   # gate 60 < 65: de-risked to cash
+
 
 def test_per_book_gate_min_overrides_global():
     broker = IBKRAdapter(mode="paper", connector="stub",

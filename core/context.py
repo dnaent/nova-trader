@@ -100,8 +100,10 @@ class AccountContext:
     guardrails: RiskGuardrails = field(default_factory=RiskGuardrails)
     nav: Decimal = Decimal("0")
     strategy: str = "tactical"          # which adapter family runs this book ("tactical"|"allocation")
-    gate_min: Optional[float] = None    # per-book macro-gate floor; None -> engine default
-    aggressive_liquidation: bool = False  # de-risk to cash when gate falls below the floor
+    gate_min: Optional[float] = None    # per-book macro-gate floor for ENTRIES; None -> engine default
+    aggressive_liquidation: bool = False  # de-risk to cash when gate falls below the de-risk floor
+    derisk_gate: Optional[float] = None  # gate floor for EXITS (hysteresis); None -> use gate_min.
+                                         # Set below gate_min to hold through minor dips (anti-whipsaw).
 
 # --------------------------------------------------------------------------- #
 # Manifest loader (portfolio.yaml -> list[AccountContext])
@@ -167,5 +169,6 @@ def load_books(manifest_path: str) -> list[AccountContext]:
             strategy=b.get("strategy", "tactical"),
             gate_min=b.get("gate_min"),
             aggressive_liquidation=b.get("aggressive_liquidation", False),
+            derisk_gate=b.get("derisk_gate"),
         ))
     return books

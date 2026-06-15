@@ -42,8 +42,10 @@ books:
     # when it weakens. Matches the pension objective (income/compounding, tightest
     # drawdown) and its strict 70%-win / <=5%-DD profile.
     strategy: allocation
-    gate_min: 75                  # per-book: only hold in strong regimes
-    aggressive_liquidation: true  # regime de-risk: close to cash when gate < 75
+    gate_min: 75                  # per-book ENTRY floor: only buy in strong regimes
+    aggressive_liquidation: true  # regime de-risk to cash
+    derisk_gate: 65               # EXIT floor (hysteresis): hold through dips 65-75,
+                                  # only sell on genuine deterioration (anti-whipsaw)
     sizing:
       type: nav_pct
       max_per_position_pct: 90    # buy-and-hold the core holding

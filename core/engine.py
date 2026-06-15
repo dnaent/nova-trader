@@ -176,10 +176,14 @@ class Engine:
                     self.ledger.record_decision(ctx.book_id, None, gate, None, None,
                                                 None, acted=False,
                                                 reason="macro gate below floor")
-                    log.info("[%s] gate %.0f < %.0f — holding cash",
+                    log.info("[%s] gate %.0f < %.0f — holding cash (no new entries)",
                              ctx.book_id, gate, book_gate_min)
-                    # Regime de-risk: close to cash (per-book or global flag).
-                    if ctx.aggressive_liquidation or self.cfg.aggressive_liquidation:
+                    # Regime de-risk uses a separate (typically lower) exit floor so
+                    # positions hold through minor dips and only liquidate on genuine
+                    # deterioration — hysteresis to prevent whipsaw.
+                    derisk_floor = ctx.derisk_gate if ctx.derisk_gate is not None else book_gate_min
+                    if (ctx.aggressive_liquidation or self.cfg.aggressive_liquidation) \
+                            and gate < derisk_floor:
                         self._liquidate_all(ctx, reason="regime de-risk")
                     continue
 
