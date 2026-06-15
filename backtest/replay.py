@@ -141,13 +141,15 @@ def report(books, ledger) -> None:
 
 
 def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 1,
-               exec_threshold: float = 50.0, auditor=None, adapters=None,
+               exec_threshold: float = 50.0, gate_min: Optional[float] = None,
+               auditor=None, adapters=None,
                loader: Optional[Callable[[str], pd.DataFrame]] = None,
                calendar_symbol: str = "SPY", do_report: bool = True) -> Ledger:
     """Replay the engine over [start, end]. Returns the (open) Ledger.
 
     `adapters` defaults to the live [EquityAdapter, FxAdapter]; inject custom
-    adapters for testing. The caller owns the returned ledger and should close().
+    adapters for testing. `gate_min` overrides the macro-gate floor (else uses
+    config). The caller owns the returned ledger and should close().
     """
     feed = ReplayFeed(loader=loader)
     dl.set_price_feed(feed)
@@ -155,6 +157,8 @@ def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 
         books = load_books("portfolio.yaml")
         cfg = load_engine_config("config.yaml")
         cfg.exec_threshold = exec_threshold
+        if gate_min is not None:
+            cfg.gate_min = gate_min
 
         start_navs = {b.ibkr_account_id: DEFAULT_NAVS.get(b.wrapper, 5000) for b in books}
         broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs=dict(start_navs))
@@ -200,13 +204,14 @@ def main() -> None:
     p.add_argument("--step", type=int, default=1, help="trading-day step (1 = every day)")
     p.add_argument("--db", default="nova_replay.db", help="ledger path for the dataset")
     p.add_argument("--exec-threshold", type=float, default=50.0, help="blended score to act")
+    p.add_argument("--gate-min", type=float, default=None, help="macro-gate floor override")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     end = pd.Timestamp(args.end) if args.end else pd.Timestamp(datetime.utcnow().date())
     start = pd.Timestamp(args.start) if args.start else end - timedelta(days=int(args.years * 365))
     ledger = run_replay(start, end, db_path=args.db, step_days=args.step,
-                        exec_threshold=args.exec_threshold)
+                        exec_threshold=args.exec_threshold, gate_min=args.gate_min)
     ledger.close()
 
 
