@@ -46,3 +46,29 @@ books:
       max_per_position_pct: 8
       leverage: 1.0
       unit: shares
+
+  # Leveraged spot Forex. Wrapper-locked to a taxable margin account — FX/options
+  # must NEVER appear in ISA/SIPP allowed_assets. CGT applies to spot FX gains for
+  # a UK individual, so tax_policy is uk_cgt (same as GIA). Judged at the
+  # account/equity-curve level; sizing is ATR + leverage-capped.
+  - book_id: ibkr_forex_margin
+    wrapper: MARGIN
+    broker: IBKR
+    ibkr_account_id: "U_FX_PLACEHOLDER"
+    allowed_assets: ["FX"]
+    tax_policy:
+      type: uk_cgt
+      higher_rate: false              # set true if a higher-rate taxpayer
+    sizing:
+      type: atr_sizing
+      risk_pct: 2.0                   # per-trade risk <= 2% of NAV
+      leverage: 5.0                   # leverage cap <= 5:1 (notional <= 5 x NAV)
+      unit: units
+      stop_atr_multiplier: 2.0
+      take_atr_multiplier: 4.0
+      trailing_atr_multiplier: 2.0
+    guardrails:
+      max_drawdown_pct: 20.0          # Forex profile: DD <= 20%
+      daily_loss_cap_pct: 3.0
+      max_concurrent_positions: 6     # caps simultaneous FX exposure
+      max_correlation: 0.8

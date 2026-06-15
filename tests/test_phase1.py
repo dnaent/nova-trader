@@ -122,7 +122,16 @@ def test_load_books_and_config():
     assert by_id["ibkr_isa_equity"].tax_policy.applicable is False
     assert by_id["ibkr_gia_equity"].tax_policy.applicable is True
     assert "EQUITY" in by_id["ibkr_isa_equity"].allowed_assets
+    # Forex book: FX-only, CGT-taxed, and never permitted inside ISA/SIPP.
+    fx = by_id["ibkr_forex_margin"]
+    assert fx.allowed_assets == {"FX"}
+    assert fx.tax_policy.applicable is True
+    assert "FX" not in by_id["ibkr_isa_equity"].allowed_assets
+    assert "FX" not in by_id["ibkr_sipp_equity"].allowed_assets
     cfg = load_engine_config("config.yaml")
     assert cfg.gate_min == 40
     assert cfg.exec_threshold == 75
-    assert "NVDA" in cfg.universe
+    # Structured universe routes per asset class via universe_for(handles).
+    assert "NVDA" in cfg.universe_for({"EQUITY", "ETF"})
+    assert "EURUSD=X" in cfg.universe_for({"FX"})
+    assert "NVDA" not in cfg.universe_for({"FX"})

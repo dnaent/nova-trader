@@ -25,8 +25,25 @@ class EngineConfig:
     gate_min: float = 40.0          # below this, hold cash (no new buys)
     exec_threshold: float = 75.0    # blended score required to act
     top_n: int = 10
-    universe: list = field(default_factory=list)
+    # universe may be a flat list (applies to every adapter) OR a mapping of
+    # asset_class -> [symbols] so each adapter scans only its own asset classes.
+    universe: object = field(default_factory=list)
     aggressive_liquidation: bool = False
+
+    def universe_for(self, handles: set) -> list:
+        """Return the symbols an adapter should scan, given its `handles` set.
+
+        Backward-compatible: a flat-list universe is returned to every adapter;
+        a dict universe is filtered to the adapter's asset classes. Keeps any
+        asset-class knowledge out of core — the adapter declares what it handles.
+        """
+        u = self.universe
+        if isinstance(u, dict):
+            symbols: list = []
+            for asset_class in handles:
+                symbols.extend(u.get(asset_class, []))
+            return symbols
+        return list(u or [])
 
 def load_engine_config(path: str) -> EngineConfig:
     """Build an EngineConfig from config.yaml (yaml imported lazily)."""
@@ -123,7 +140,8 @@ class Engine:
 
                 open_symbols = [p["symbol"] for p in open_positions]
 
-                for c in adapter.scan(self.cfg.universe)[: self.cfg.top_n]:
+                scan_universe = self.cfg.universe_for(adapter.handles)
+                for c in adapter.scan(scan_universe)[: self.cfg.top_n]:
                     # HARD permission rule
                     if c.asset_class not in ctx.allowed_assets:
                         self.ledger.record_decision(ctx.book_id, c.symbol, gate,
@@ -175,33 +193,30 @@ class Engine:
 # Self-contained demo
 # =========================================================================== #
 def _demo() -> None:
-    from core.context import AccountContext, NullTaxPolicy
-    from tax.uk_cgt import UkCgtPolicy
-    from core.risk import NavPctSizing
+    from core.context import load_books
     from adapters.broker_ibkr import IBKRAdapter
     from adapters.asset_equity import EquityAdapter
+    from adapters.asset_fx import FxAdapter
     from layers.analyst import LLMAuditor
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
+    # Load the real manifest so the demo exercises every wired book (incl. FOREX)
+    # and the structured, asset-class-aware universe from config.yaml.
+    books = load_books("portfolio.yaml")
+    # Paper NAVs keyed by the placeholder account IDs in portfolio.yaml.
     broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={
-        "U_ISA": 4000, "U_SIPP": 13000, "U_GIA": 2000,
+        "U_ISA_PLACEHOLDER": 4000, "U_SIPP_PLACEHOLDER": 13000,
+        "U_GIA_PLACEHOLDER": 2000, "U_FX_PLACEHOLDER": 5000,
     })
     broker.connect()
 
-    books = [
-        AccountContext("ibkr_isa_equity", "ISA", "IBKR", "U_ISA",
-                       {"EQUITY", "ETF"}, NullTaxPolicy(), NavPctSizing(max_per_position_pct=8)),
-        AccountContext("ibkr_sipp_equity", "SIPP", "IBKR", "U_SIPP",
-                       {"EQUITY", "ETF"}, NullTaxPolicy(), NavPctSizing(max_per_position_pct=6)),
-        AccountContext("ibkr_gia_equity", "GIA", "IBKR", "U_GIA",
-                       {"EQUITY", "ETF"}, UkCgtPolicy(higher_rate=False),
-                       NavPctSizing(max_per_position_pct=8)),
-    ]
-
     ledger = Ledger(":memory:")
-    cfg = EngineConfig(universe=["SPY", "NVDA", "VWRL", "F"])
-    Engine(books, [EquityAdapter()], broker, LLMAuditor(backend="local"), ledger, cfg).run_cycle()
+    cfg = load_engine_config("config.yaml")
+    # One engine, both asset adapters — the engine routes each book to the
+    # adapter(s) whose `handles` intersect the book's allowed_assets.
+    Engine(books, [EquityAdapter(), FxAdapter()], broker,
+           LLMAuditor(backend="local"), ledger, cfg).run_cycle()
 
     print("\n=== Performance summary (per book) ===")
     for b in books:

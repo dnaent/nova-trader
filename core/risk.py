@@ -143,8 +143,16 @@ class AtrSizing:
         
         # Number of shares = capital at risk / (ATR * stop multiplier)
         qty = (capital_at_risk / (atr * self.stop_atr_multiplier)).to_integral_value(rounding=ROUND_DOWN)
-        
+
         notional = (qty * price).quantize(Decimal("0.01"))
+
+        # Leverage cap: notional exposure must not exceed NAV * leverage.
+        # For FX this enforces the book's leverage limit (e.g. <= 5:1); for a
+        # default leverage of 1.0 it caps exposure at NAV (no implicit margin).
+        max_notional = (ctx.nav * self.leverage)
+        if notional > max_notional and price > 0:
+            qty = (max_notional / price).to_integral_value(rounding=ROUND_DOWN)
+            notional = (qty * price).quantize(Decimal("0.01"))
         
         stop_loss = (price - (atr * self.stop_atr_multiplier)).quantize(Decimal("0.01"))
         take_profit = (price + (atr * self.take_atr_multiplier)).quantize(Decimal("0.01"))
