@@ -129,6 +129,29 @@ class Ledger:
         q += " ORDER BY id ASC"
         return [r["realized_pnl"] for r in self.conn.execute(q, args)]
 
+    def closed_returns(self, book_id: Optional[str]) -> list[float]:
+        """Per-trade fractional returns (realized_pnl / notional) for closed trades.
+
+        These are the unit-free returns the robustness tools (walk-forward,
+        Monte-Carlo) and Sortino consume. Trades with non-positive notional are
+        skipped so a bad row can't produce a divide-by-zero.
+        """
+        q = ("SELECT realized_pnl, notional FROM trades "
+             "WHERE realized_pnl IS NOT NULL AND notional > 0")
+        args: tuple = ()
+        if book_id:
+            q += " AND book_id=?"
+            args = (book_id,)
+        q += " ORDER BY id ASC"
+        return [r["realized_pnl"] / r["notional"] for r in self.conn.execute(q, args)]
+
+    def nav_series(self, book_id: str) -> list[float]:
+        """The book's NAV equity curve, ordered oldest-first."""
+        rows = self.conn.execute(
+            "SELECT nav FROM nav_history WHERE book_id=? ORDER BY ts ASC", (book_id,)
+        ).fetchall()
+        return [r["nav"] for r in rows]
+
     def get_peak_nav(self, book_id: str) -> Optional[float]:
         row = self.conn.execute(
             "SELECT MAX(nav) as peak FROM nav_history WHERE book_id=?", (book_id,)
