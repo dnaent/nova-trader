@@ -227,11 +227,31 @@ def _survives_walk_forward(returns: Sequence[float]) -> tuple[bool, float]:
     return best > 0.0, best
 
 
+def portfolio_returns(nav_curve: Optional[Sequence[float]]) -> Optional[list]:
+    """PORTFOLIO-level per-event returns from the NAV equity curve.
+
+    Drawdown is a portfolio property, so the drawdown Monte-Carlo must bootstrap
+    NAV returns — not per-trade `pnl/notional` (position-level) returns, which
+    model betting 100% of capital on each trade and massively overstate drawdown.
+    Keeps only the non-zero steps (the actual P&L events). None if unusable.
+    """
+    if nav_curve is None or len(nav_curve) < 2:
+        return None
+    arr = np.asarray(nav_curve, dtype=float)
+    prev = arr[:-1]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r = np.where(prev != 0, (arr[1:] - prev) / prev, 0.0)
+    r = r[np.isfinite(r)]
+    r = r[r != 0.0]
+    return r.tolist()
+
+
 def _survives_monte_carlo(returns: Sequence[float], dd_cap_pct: Optional[float]
                           ) -> tuple[bool, float]:
     """True if the bootstrapped 95th-percentile max drawdown stays within the cap.
 
-    Uses the book's drawdown cap when set, else a universal 30% sanity bound.
+    `returns` must be PORTFOLIO-level (see portfolio_returns). Uses the book's
+    drawdown cap when set, else a universal 30% sanity bound.
     """
     _, p95, _ = run_monte_carlo_drawdown(list(returns), num_simulations=2000)
     cap = (dd_cap_pct if dd_cap_pct is not None else 30.0) / 100.0
@@ -282,10 +302,14 @@ def validate_book(profile: BookProfile,
     add("profit_factor(floor)", pf, pf is not None and pf > 1.0, "> 1.0 (universal floor)")
 
     # ---- universal floor: robustness ----------------------------------- #
+    # MC drawdown bootstraps PORTFOLIO returns (NAV curve); falls back to the
+    # per-trade series only if no NAV curve is available.
+    port_ret = portfolio_returns(nav_curve)
     if run_robustness and returns is not None and len(returns) >= 2:
         wf_ok, wf_sharpe = _survives_walk_forward(returns)
         add("walk_forward", wf_sharpe, wf_ok, "Sharpe > 0 (universal floor)")
-        mc_ok, mc_p95 = _survives_monte_carlo(returns, profile.max_drawdown_pct)
+        mc_input = port_ret if port_ret else list(returns)
+        mc_ok, mc_p95 = _survives_monte_carlo(mc_input, profile.max_drawdown_pct)
         cap = profile.max_drawdown_pct if profile.max_drawdown_pct is not None else 30.0
         add("monte_carlo_dd_p95", mc_p95, mc_ok, f"<= {cap:g}% (universal floor)")
     elif run_robustness:
