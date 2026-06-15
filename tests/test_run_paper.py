@@ -12,7 +12,7 @@ def test_build_engine_offline():
         assert {"ibkr_isa_equity", "ibkr_sipp_equity",
                 "ibkr_gia_equity", "ibkr_forex_margin"} <= ids
         kinds = {type(a).__name__ for a in engine.asset_adapters}
-        assert kinds == {"EquityAdapter", "FxAdapter"}
+        assert kinds == {"EquityAdapter", "FxAdapter", "AllocationAdapter"}
         # Paper stub gives every book a simulated NAV keyed by its account id.
         for b in books:
             assert engine.broker._navs[b.ibkr_account_id] == DEFAULT_NAVS.get(b.wrapper, 5000)
