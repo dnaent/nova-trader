@@ -106,6 +106,12 @@ class Engine:
                      reason, exit_price, realized)
 
     def run_cycle(self) -> None:
+        # Within one cycle the macro gate and scan are identical for every book
+        # sharing an adapter + universe (e.g. the three equity books). Cache them
+        # so the (expensive) gate fetch and per-symbol model fit run once, not
+        # once per book. Candidates are read-only downstream, so sharing is safe.
+        gate_cache: dict = {}
+        scan_cache: dict = {}
         for ctx in self.books:
             ctx.nav = self.broker.refresh_nav(ctx)
 
@@ -145,7 +151,9 @@ class Engine:
                 if not (adapter.handles & ctx.allowed_assets):
                     continue  # this adapter's asset classes aren't permitted here
 
-                gate = adapter.macro_gate()
+                if id(adapter) not in gate_cache:
+                    gate_cache[id(adapter)] = adapter.macro_gate()
+                gate = gate_cache[id(adapter)]
                 if gate < self.cfg.gate_min:
                     self.ledger.record_decision(ctx.book_id, None, gate, None, None,
                                                 None, acted=False,
@@ -180,7 +188,10 @@ class Engine:
                 open_symbols = [p["symbol"] for p in open_positions]
 
                 scan_universe = self.cfg.universe_for(adapter.handles)
-                for c in adapter.scan(scan_universe)[: self.cfg.top_n]:
+                scan_key = (id(adapter), tuple(scan_universe))
+                if scan_key not in scan_cache:
+                    scan_cache[scan_key] = adapter.scan(scan_universe)
+                for c in scan_cache[scan_key][: self.cfg.top_n]:
                     # HARD permission rule
                     if c.asset_class not in ctx.allowed_assets:
                         self.ledger.record_decision(ctx.book_id, c.symbol, gate,
