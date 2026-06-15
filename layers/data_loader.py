@@ -9,7 +9,38 @@ from datetime import datetime, timedelta
 
 CACHE_DIR = ".cache"
 
+# Optional real-time price source (adapters.ibkr_feed.IBKRDataFeed). When set
+# and connected, it is the PRIMARY source for daily bars; yfinance stays as the
+# automatic fallback. Injected via set_price_feed() so this module never imports
+# ib_async directly and the engine stays broker-agnostic.
+_PRICE_FEED = None
+
+
+def set_price_feed(feed) -> None:
+    """Register (or clear, with None) the real-time price feed used by the hot path."""
+    global _PRICE_FEED
+    _PRICE_FEED = feed
+
+
+def get_price_feed():
+    """Return the currently registered price feed, if any."""
+    return _PRICE_FEED
+
+
 def get_daily_data(symbol: str, lookback_days: int = 365, use_cache: bool = True) -> pd.DataFrame:
+    # Primary: the real-time IBKR feed if one is registered and connected.
+    # Any failure (unresolved contract, disconnect, empty frame) falls through
+    # to the yfinance + cache path below — yfinance is always the safety net.
+    feed = _PRICE_FEED
+    if feed is not None:
+        try:
+            if feed.is_connected():
+                df = feed.get_daily_bars(symbol, lookback_days)
+                if df is not None and not df.empty:
+                    return df
+        except Exception:
+            pass
+
     os.makedirs(CACHE_DIR, exist_ok=True)
     cache_path = os.path.join(CACHE_DIR, f"{symbol}_daily.csv")
     
