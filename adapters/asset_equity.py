@@ -4,7 +4,7 @@ from decimal import Decimal
 from core.context import Candidate
 from layers.macro_gate import MacroGate
 from layers.ml_scanner import MLScanner
-from layers.data_loader import get_financials, get_recent_news
+from layers.data_loader import get_financials, get_recent_news, format_markers
 import json
 
 class EquityAdapter:
@@ -33,6 +33,7 @@ class EquityAdapter:
             f"=== INFERENCE CONTEXT BUNDLE ===\n"
             f"Macro Environment:\n"
             f"{json.dumps(self._last_gate_result, indent=2) if self._last_gate_result else 'None'}\n\n"
+            f"{format_markers(c.meta.get('markers', {}))}\n\n"
             f"Company Financials (Last 4 Quarters):\n"
             f"{financials}\n\n"
             f"{news}\n"

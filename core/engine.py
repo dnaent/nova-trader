@@ -162,10 +162,26 @@ class Engine:
                     claude_score = self.auditor.audit(adapter.auditor_prompt(c))
                     blended = 0.60 * c.quant_score + 0.40 * claude_score
 
+                    # Full Inference Context Bundle now exists (macro regime + the
+                    # 32-marker snapshot + all three scores). Log it as a parent
+                    # training record at each decision branch below — both acted
+                    # and not-acted are training signal (the parent->child bridge).
+                    macro_ctx = getattr(adapter, "_last_gate_result", {}) or {}
+                    markers = c.meta.get("markers", {})
+
+                    def _log_training(acted: bool, reason: str, order=None, trade_id=None) -> None:
+                        self.ledger.record_training_sample(
+                            book_id=ctx.book_id, symbol=c.symbol, wrapper=ctx.wrapper,
+                            asset_class=c.asset_class, macro=macro_ctx, markers=markers,
+                            gate=gate, quant_score=c.quant_score, claude_score=claude_score,
+                            blended=blended, acted=acted, reason=reason,
+                            order=order, trade_id=trade_id)
+
                     if blended < self.cfg.exec_threshold:
                         self.ledger.record_decision(ctx.book_id, c.symbol, gate,
                                                      c.quant_score, claude_score, blended,
                                                      acted=False, reason="below exec threshold")
+                        _log_training(False, "below exec threshold")
                         continue
 
                     order = ctx.sizing.size(c, ctx, gate_score=gate)
@@ -173,10 +189,11 @@ class Engine:
                         self.ledger.record_decision(ctx.book_id, c.symbol, gate,
                                                      c.quant_score, claude_score, blended,
                                                      acted=False, reason="sized quantity <= 0")
+                        _log_training(False, "sized quantity <= 0", order=order)
                         continue
 
                     fill = self.broker.place(order, ctx)
-                    self.ledger.record_trade(
+                    trade_id = self.ledger.record_trade(
                         book_id=ctx.book_id, account_id=order.account_id, symbol=order.symbol,
                         side=order.side, quantity=order.quantity, price=order.price,
                         notional=order.notional, status=fill.get("status", "paper"),
@@ -186,6 +203,8 @@ class Engine:
                     self.ledger.record_decision(ctx.book_id, c.symbol, gate, c.quant_score,
                                                 claude_score, blended, acted=True,
                                                 reason=f"executed ({fill.get('status')})")
+                    _log_training(True, f"executed ({fill.get('status')})",
+                                  order=order, trade_id=trade_id)
                     log.info("[%s] ACT %s blended=%.1f qty=%s", ctx.book_id, c.symbol,
                              blended, order.quantity)
 

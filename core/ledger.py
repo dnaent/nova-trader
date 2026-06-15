@@ -14,6 +14,7 @@ later phase. Methods return None when there's insufficient data.
 """
 from __future__ import annotations
 
+import json
 import math
 import sqlite3
 from datetime import datetime, timezone
@@ -61,6 +62,38 @@ CREATE TABLE IF NOT EXISTS nav_history (
     nav         REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_nav_history_book ON nav_history(book_id);
+
+-- The parent model's training dataset (the parent->child bridge the cloud model
+-- reads). One row per audited candidate: the full Inference Context Bundle
+-- (macro regime + the 32-marker snapshot), the book context, the decision +
+-- all three scores, the sizing, and the outcome (backfilled on trade close).
+CREATE TABLE IF NOT EXISTS training_records (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts           TEXT NOT NULL,
+    book_id      TEXT NOT NULL,
+    wrapper      TEXT,
+    asset_class  TEXT,
+    symbol       TEXT NOT NULL,
+    gate         REAL,
+    macro_json   TEXT,                 -- macro regime snapshot (JSON)
+    markers_json TEXT,                 -- 32-marker snapshot (JSON)
+    quant_score  REAL,
+    claude_score REAL,
+    blended      REAL,
+    acted        INTEGER NOT NULL,
+    reason       TEXT,
+    side         TEXT,
+    quantity     REAL,
+    price        REAL,
+    notional     REAL,
+    stop_loss    REAL,
+    take_profit  REAL,
+    trade_id     INTEGER,              -- FK -> trades.id, for the outcome join
+    realized_pnl REAL,                 -- backfilled on close
+    r_multiple   REAL                  -- backfilled on close
+);
+CREATE INDEX IF NOT EXISTS idx_training_book ON training_records(book_id);
+CREATE INDEX IF NOT EXISTS idx_training_trade ON training_records(trade_id);
 """
 
 
@@ -105,10 +138,63 @@ class Ledger:
         self.conn.commit()
         return cur.lastrowid
 
+    def record_training_sample(self, *, book_id: str, symbol: str,
+                               wrapper: Optional[str] = None,
+                               asset_class: Optional[str] = None,
+                               macro: Optional[dict] = None,
+                               markers: Optional[dict] = None,
+                               gate: Optional[float] = None,
+                               quant_score: Optional[float] = None,
+                               claude_score: Optional[float] = None,
+                               blended: Optional[float] = None,
+                               acted: bool = False, reason: str = "",
+                               order=None, trade_id: Optional[int] = None) -> int:
+        """Log one parent-model training record (the parent->child bridge dataset).
+
+        Captures the full Inference Context Bundle (macro regime + 32-marker
+        snapshot), book context, decision + all three scores, and sizing. The
+        outcome columns are backfilled later by close_trade() via trade_id.
+        ``order`` is a core.context.Order (or None when no order was placed).
+        """
+        side = quantity = price = notional = stop_loss = take_profit = None
+        if order is not None:
+            side = order.side
+            quantity = float(order.quantity)
+            price = float(order.price)
+            notional = float(order.notional)
+            stop_loss = float(order.stop_loss) if order.stop_loss is not None else None
+            take_profit = float(order.take_profit) if order.take_profit is not None else None
+        cur = self.conn.execute(
+            "INSERT INTO training_records (ts,book_id,wrapper,asset_class,symbol,gate,"
+            "macro_json,markers_json,quant_score,claude_score,blended,acted,reason,"
+            "side,quantity,price,notional,stop_loss,take_profit,trade_id) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (_now(), book_id, wrapper, asset_class, symbol, gate,
+             json.dumps(macro or {}), json.dumps(markers or {}),
+             quant_score, claude_score, blended, int(acted), reason,
+             side, quantity, price, notional, stop_loss, take_profit, trade_id),
+        )
+        self.conn.commit()
+        return cur.lastrowid
+
     def close_trade(self, trade_id: int, exit_price: Decimal, realized_pnl: Decimal) -> None:
         self.conn.execute(
             "UPDATE trades SET status='closed', realized_pnl=?, broker_ref=broker_ref "
             "WHERE id=?", (float(realized_pnl), trade_id))
+        # Backfill the training record's outcome: realized PnL + R-multiple, where
+        # initial risk = (entry - stop) * qty. R-multiple is left NULL if no stop.
+        pnl = float(realized_pnl)
+        row = self.conn.execute(
+            "SELECT price, stop_loss, quantity FROM training_records WHERE trade_id=?",
+            (trade_id,)).fetchone()
+        r_multiple = None
+        if row is not None and row["stop_loss"] is not None and row["quantity"]:
+            risk = abs(row["price"] - row["stop_loss"]) * row["quantity"]
+            if risk > 0:
+                r_multiple = pnl / risk
+        self.conn.execute(
+            "UPDATE training_records SET realized_pnl=?, r_multiple=? WHERE trade_id=?",
+            (pnl, r_multiple, trade_id))
         self.conn.commit()
 
     def record_nav(self, book_id: str, nav: Decimal) -> None:
@@ -212,6 +298,34 @@ class Ledger:
             "sharpe_trade_level": self._sharpe(pnls),
             "max_drawdown": self._max_drawdown(pnls),
         }
+
+    def training_samples(self, book_id: Optional[str] = None) -> list[dict]:
+        """Return training records as dicts, JSON columns parsed back to objects.
+
+        This is the curated parent-model dataset the cloud child reads (per-tenant
+        isolated at the SaaS layer — never cross-book/cross-tenant).
+        """
+        q = "SELECT * FROM training_records"
+        args: tuple = ()
+        if book_id:
+            q += " WHERE book_id=?"
+            args = (book_id,)
+        q += " ORDER BY id ASC"
+        out = []
+        for r in self.conn.execute(q, args):
+            d = dict(r)
+            d["macro"] = json.loads(d.pop("macro_json") or "{}")
+            d["markers"] = json.loads(d.pop("markers_json") or "{}")
+            out.append(d)
+        return out
+
+    def export_training_jsonl(self, path: str, book_id: Optional[str] = None) -> int:
+        """Write the training dataset to newline-delimited JSON. Returns row count."""
+        rows = self.training_samples(book_id)
+        with open(path, "w", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+        return len(rows)
 
     def close(self) -> None:
         self.conn.close()

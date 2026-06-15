@@ -60,6 +60,23 @@ def get_daily_data(symbol: str, lookback_days: int = 365, use_cache: bool = True
         df.to_csv(cache_path)
     return df
 
+def format_markers(markers: dict) -> str:
+    """Render a marker snapshot for the LLM Inference Context Bundle (Layer 3).
+
+    Markers are the same 32-indicator matrix the ML scanner (Layer 2) sees; this
+    wires them into the auditor's context so both layers reason over identical
+    inputs. Returns a stable, sorted, human-readable block.
+    """
+    if not markers:
+        return "No technical markers available."
+    lines = ["### Technical Markers (current snapshot)"]
+    for name in sorted(markers):
+        value = markers[name]
+        lines.append(f"- {name}: {value:.4f}" if isinstance(value, (int, float))
+                     else f"- {name}: {value}")
+    return "\n".join(lines)
+
+
 def get_financials(symbol: str) -> str:
     """Fetch the trailing 4 quarters of financials for the LLM prompt."""
     ticker = yf.Ticker(symbol)

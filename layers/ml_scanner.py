@@ -50,17 +50,24 @@ class MLScanner:
                 continue
                 
             prob_breakout = self.model.predict_proba(today_features)[0][1]
-            
+
             # quant_score is 0-100 probability
             quant_score = float(prob_breakout * 100)
             price = df.iloc[-1]['Close']
-            
+
+            # Snapshot of the full marker matrix (all indicators the scanner saw)
+            # so the SAME 32 markers flow downstream into the Inference Context
+            # Bundle (Layer 3) and the parent model's training records — not just
+            # into this scanner. Keys are the pandas-ta column names.
+            markers = {f: round(float(v), 6)
+                       for f, v in zip(features, today_features.flatten())}
+
             c = Candidate(
                 symbol=symbol,
                 asset_class=self.asset_class,
                 quant_score=quant_score,
                 price=price,
-                meta={"ml_prob": f"{quant_score:.1f}%"}
+                meta={"ml_prob": f"{quant_score:.1f}%", "markers": markers}
             )
             candidates.append(c)
             

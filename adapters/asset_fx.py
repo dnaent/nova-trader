@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Iterable
 from decimal import Decimal
 from core.context import Candidate
-from layers.data_loader import get_daily_data, get_recent_news
+from layers.data_loader import get_daily_data, get_recent_news, format_markers
 from layers.ml_scanner import MLScanner
 import json
 
@@ -65,6 +65,7 @@ class FxAdapter:
             f"=== INFERENCE CONTEXT BUNDLE ===\n"
             f"Macro Environment (US Dollar Proxy):\n"
             f"{json.dumps(self._last_gate_result, indent=2) if self._last_gate_result else 'None'}\n\n"
+            f"{format_markers(c.meta.get('markers', {}))}\n\n"
             f"Recent Geopolitical and Economic News:\n"
             f"{news}\n"
             f"================================\n\n"
