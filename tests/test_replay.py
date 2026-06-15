@@ -91,3 +91,43 @@ def test_replay_generates_labelled_marker_dataset():
     finally:
         ledger.close()
     assert dl.get_price_feed() is None                     # feed uninstalled after run
+
+
+# --------------------------------------------------------------------------- #
+# Belt-and-braces: the REAL scanner (RandomForest on the 32-indicator matrix)
+# runs end-to-end through replay. Offline + deterministic: the macro gate and the
+# network-bound qualitative inputs are stubbed, but the scanner itself is real.
+# --------------------------------------------------------------------------- #
+def _mixed(symbol: str) -> pd.DataFrame:
+    """A seeded random walk -> mixed up/down moves -> two target classes (so the
+    real classifier trains without a degenerate single-class case)."""
+    n = 500
+    idx = pd.date_range("2022-01-03", periods=n, freq="B")
+    rng = np.random.RandomState(sum(ord(ch) for ch in symbol))
+    close = pd.Series(100.0 + np.cumsum(rng.normal(0.05, 1.5, n)), index=idx).clip(lower=1.0)
+    return pd.DataFrame({"Open": close, "High": close + rng.uniform(0.1, 1.0, n),
+                         "Low": close - rng.uniform(0.1, 1.0, n), "Close": close,
+                         "Volume": [500000] * n, "Dividends": 0.0, "Stock Splits": 0.0},
+                        index=idx)
+
+def test_real_scanner_runs_through_replay(monkeypatch):
+    import adapters.asset_equity as ae
+    from adapters.asset_equity import EquityAdapter
+    # Fix the gate so scanning proceeds; stub the network-bound qualitative inputs.
+    monkeypatch.setattr(EquityAdapter, "macro_gate", lambda self: 80.0)
+    monkeypatch.setattr(ae, "get_financials", lambda s: "FIN")
+    monkeypatch.setattr(ae, "get_recent_news", lambda s: "NEWS")
+
+    idx = _mixed("REF").index
+    start, end = idx[-3], idx[-1]                           # 2 steps, REAL scanner
+
+    ledger = run_replay(start, end, db_path=":memory:", step_days=1, exec_threshold=50.0,
+                        loader=_mixed, adapters=[EquityAdapter()], do_report=False)
+    try:
+        samples = ledger.training_samples()
+        assert samples, "real scanner should have produced audited candidates"
+        # The genuine 32-indicator matrix was captured (not a stub's 1-2 markers).
+        assert any(len(s["markers"]) >= 10 for s in samples)
+        assert any("MACD_12_26_9" in s["markers"] for s in samples)
+    finally:
+        ledger.close()
