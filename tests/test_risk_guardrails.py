@@ -63,6 +63,17 @@ def test_check_correlation_no_open_symbols():
     from core.risk import check_correlation
     assert check_correlation("X", [], 0.8) == (False, "")
 
+def test_check_correlation_flags_highly_correlated(monkeypatch):
+    import pandas as pd, numpy as np
+    from core.risk import check_correlation
+    idx = pd.date_range("2024-01-01", periods=60, freq="D")
+    series = pd.Series(np.linspace(1.0, 2.0, 60) + np.random.RandomState(0).normal(0, 0.01, 60),
+                       index=idx)
+    monkeypatch.setattr(risk, "get_daily_data",
+                        lambda *a, **k: pd.DataFrame({"Close": series.copy()}))
+    flagged, reason = check_correlation("X", ["Y"], 0.8)   # both return the same series
+    assert flagged is True and "Y" in reason
+
 
 # --------------------------------------------------------------------------- #
 # UK CGT edge branches
