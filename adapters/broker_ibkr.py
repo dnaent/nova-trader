@@ -54,6 +54,11 @@ class IBKRAdapter:
     def is_connected(self) -> bool:
         return self._connected
 
+    def set_simulated_nav(self, account_id: str, nav) -> None:
+        """Paper-only: set a simulated account NAV. Used by the replay harness to
+        reflect realised PnL as an equity curve. No effect on live connectors."""
+        self._navs[account_id] = Decimal(str(nav))
+
     # ----- account / positions ------------------------------------------- #
     def refresh_nav(self, ctx: AccountContext) -> Decimal:
         if self.connector == "stub":

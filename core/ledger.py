@@ -254,6 +254,15 @@ class Ledger:
         q += " ORDER BY id ASC"
         return [dict(r) for r in self.conn.execute(q, args)]
 
+    def realized_pnl_total(self, book_id: Optional[str] = None) -> float:
+        """Cumulative realised PnL across closed trades (a book, or all books)."""
+        q = "SELECT COALESCE(SUM(realized_pnl), 0.0) s FROM trades WHERE realized_pnl IS NOT NULL"
+        args: tuple = ()
+        if book_id:
+            q += " AND book_id=?"
+            args = (book_id,)
+        return float(self.conn.execute(q, args).fetchone()["s"])
+
     def get_peak_nav(self, book_id: str) -> Optional[float]:
         row = self.conn.execute(
             "SELECT MAX(nav) as peak FROM nav_history WHERE book_id=?", (book_id,)

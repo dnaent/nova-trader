@@ -1,0 +1,213 @@
+"""
+Nova Engine — backtest/replay.py
+
+Historical replay harness. Runs the REAL engine cycle-by-cycle over history so
+the parent model's training dataset (the 32-marker snapshot + macro regime +
+decision + outcome, per book) accumulates fast — months/years of trades in
+minutes — instead of waiting on forward paper.
+
+Point-in-time correctness (no lookahead) is the whole game: a `ReplayFeed` is
+installed as the data_loader price feed and serves, for every symbol, ONLY the
+bars up to the current as-of date. Because the engine reads all prices through
+`get_daily_data` / `get_latest_price`, the scanner (32 markers), the macro gate,
+correlation, and exit evaluation all become point-in-time automatically — no
+engine changes.
+
+Layer 3 uses NeutralAuditor by default (the live LLM is too slow for thousands
+of cycles and historical news/fundamentals aren't available point-in-time).
+
+Execution is the paper stub throughout — replay NEVER places a live order.
+
+Usage:
+    python -m backtest.replay --years 3
+    python -m backtest.replay --start 2022-01-01 --end 2024-12-31 --step 1
+"""
+from __future__ import annotations
+
+import argparse
+import logging
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Callable, Optional
+
+import pandas as pd
+
+import layers.data_loader as dl
+from core.context import Order, load_books
+from core.engine import Engine, load_engine_config
+from core.ledger import Ledger
+from adapters.broker_ibkr import IBKRAdapter
+from adapters.asset_equity import EquityAdapter
+from adapters.asset_fx import FxAdapter
+from layers.analyst import NeutralAuditor
+from backtest.validation import validate_from_ledger
+
+log = logging.getLogger("nova.replay")
+
+# Paper starting NAVs by wrapper (replay equity curve starts here, then compounds
+# with realised PnL via broker.set_simulated_nav each cycle).
+DEFAULT_NAVS = {"ISA": 4000, "SIPP": 13000, "GIA": 2000, "MARGIN": 5000}
+
+
+def _default_loader(symbol: str) -> pd.DataFrame:
+    """Fetch a symbol's FULL history once (yfinance), normalised to naive dates.
+
+    Must bypass get_daily_data (which routes through the feed) to avoid recursion.
+    """
+    import yfinance as yf
+    df = yf.Ticker(symbol).history(period="max")
+    if df is None or df.empty:
+        return pd.DataFrame()
+    idx = pd.to_datetime(df.index)
+    if getattr(idx, "tz", None) is not None:
+        idx = idx.tz_localize(None)
+    df = df.copy()
+    df.index = idx.normalize()
+    return df
+
+
+class ReplayFeed:
+    """data_loader price feed that serves point-in-time history.
+
+    Lazily loads each symbol's full history once, then returns only the bars up
+    to `as_of`. Returned frames are copies so the scanner's in-place indicator
+    appends never corrupt the cache.
+    """
+
+    def __init__(self, loader: Optional[Callable[[str], pd.DataFrame]] = None):
+        self._full: dict[str, pd.DataFrame] = {}
+        self.as_of: Optional[pd.Timestamp] = None
+        self._loader = loader or _default_loader
+
+    def set_as_of(self, date) -> None:
+        self.as_of = pd.Timestamp(date).normalize()
+
+    def is_connected(self) -> bool:
+        return self.as_of is not None
+
+    def full_history(self, symbol: str) -> pd.DataFrame:
+        if symbol not in self._full:
+            self._full[symbol] = self._loader(symbol)
+        return self._full[symbol]
+
+    def get_daily_bars(self, symbol: str, lookback_days: int = 365) -> pd.DataFrame:
+        df = self.full_history(symbol)
+        if df is None or df.empty or self.as_of is None:
+            return pd.DataFrame()
+        sl = df[df.index <= self.as_of]
+        if lookback_days:
+            sl = sl.tail(lookback_days)
+        return sl.copy()
+
+    def get_price(self, symbol: str):
+        sl = self.get_daily_bars(symbol, lookback_days=5)
+        if sl.empty or "Close" not in sl.columns:
+            return None
+        return Decimal(str(sl["Close"].iloc[-1]))
+
+
+def _force_close_all(engine: Engine, books, label: str = "end-of-replay") -> None:
+    """Mark every still-open position to the final as-of price so all trades have
+    an outcome (and the dataset has complete labels)."""
+    for ctx in books:
+        for pos in engine.ledger.open_trades(ctx.book_id):
+            price = dl.get_latest_price(pos["symbol"])
+            if price is None:
+                continue
+            entry = Decimal(str(pos["price"]))
+            qty = Decimal(str(pos["quantity"]))
+            realized = (price - entry) * qty
+            sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
+                         symbol=pos["symbol"], side="SELL", quantity=qty,
+                         price=price, notional=(price * qty))
+            engine.broker.place(sell, ctx)
+            engine.ledger.close_trade(pos["id"], price, realized)
+            log.info("[%s] CLOSE %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
+                     label, price, realized)
+
+
+def report(books, ledger) -> None:
+    print("\n" + "=" * 70)
+    print("PER-BOOK VALIDATION (historical replay dataset)")
+    print("=" * 70)
+    for ctx in books:
+        res = validate_from_ledger(ctx, ledger, run_robustness=True, seed=42)
+        print(res.summary())
+        perf = ledger.performance_summary(ctx.book_id)
+        print(f"  trades_closed={perf['trades_closed']} "
+              f"realized_pnl={ledger.realized_pnl_total(ctx.book_id):.2f} "
+              f"training_samples={len(ledger.training_samples(ctx.book_id))}")
+        print("-" * 70)
+
+
+def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 1,
+               exec_threshold: float = 50.0, auditor=None,
+               loader: Optional[Callable[[str], pd.DataFrame]] = None,
+               calendar_symbol: str = "SPY", do_report: bool = True) -> Ledger:
+    """Replay the engine over [start, end]. Returns the (open) Ledger.
+
+    The caller owns the returned ledger and should close() it.
+    """
+    feed = ReplayFeed(loader=loader)
+    dl.set_price_feed(feed)
+    try:
+        books = load_books("portfolio.yaml")
+        cfg = load_engine_config("config.yaml")
+        cfg.exec_threshold = exec_threshold
+
+        start_navs = {b.ibkr_account_id: DEFAULT_NAVS.get(b.wrapper, 5000) for b in books}
+        broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs=dict(start_navs))
+        broker.connect()
+        ledger = Ledger(db_path)
+        engine = Engine(books, [EquityAdapter(), FxAdapter()], broker,
+                        auditor or NeutralAuditor(), ledger, cfg)
+
+        # Trading calendar from the reference symbol's point-in-time index.
+        feed.set_as_of(end)
+        ref = feed.full_history(calendar_symbol)
+        if ref is None or ref.empty:
+            raise RuntimeError(f"no history for calendar symbol {calendar_symbol!r}")
+        lo, hi = pd.Timestamp(start).normalize(), pd.Timestamp(end).normalize()
+        calendar = [d for d in ref.index if lo <= d <= hi][::max(1, step_days)]
+        log.info("Replaying %d trading steps from %s to %s (step=%d)",
+                 len(calendar), lo.date(), hi.date(), step_days)
+
+        for i, d in enumerate(calendar, 1):
+            feed.set_as_of(d)
+            # Compound the equity curve: NAV = start + realised PnL so far.
+            for b in books:
+                broker.set_simulated_nav(
+                    b.ibkr_account_id,
+                    start_navs[b.ibkr_account_id] + ledger.realized_pnl_total(b.book_id))
+            engine.run_cycle()
+            if i % 25 == 0:
+                log.info("  ...step %d/%d (%s)", i, len(calendar), d.date())
+
+        _force_close_all(engine, books)
+        if do_report:
+            report(books, ledger)
+        return ledger
+    finally:
+        dl.set_price_feed(None)
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Nova historical replay harness (parent dataset).")
+    p.add_argument("--start", default=None, help="YYYY-MM-DD (default: end - years)")
+    p.add_argument("--end", default=None, help="YYYY-MM-DD (default: today)")
+    p.add_argument("--years", type=float, default=3.0, help="window length if --start omitted")
+    p.add_argument("--step", type=int, default=1, help="trading-day step (1 = every day)")
+    p.add_argument("--db", default="nova_replay.db", help="ledger path for the dataset")
+    p.add_argument("--exec-threshold", type=float, default=50.0, help="blended score to act")
+    args = p.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    end = pd.Timestamp(args.end) if args.end else pd.Timestamp(datetime.utcnow().date())
+    start = pd.Timestamp(args.start) if args.start else end - timedelta(days=int(args.years * 365))
+    ledger = run_replay(start, end, db_path=args.db, step_days=args.step,
+                        exec_threshold=args.exec_threshold)
+    ledger.close()
+
+
+if __name__ == "__main__":
+    main()

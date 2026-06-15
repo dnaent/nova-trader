@@ -93,3 +93,15 @@ class StubAuditor:
     """Fallback stub for testing without API keys."""
     def audit(self, prompt: str) -> float:
         return 35.0 if "FORD" in prompt else 80.0
+
+
+class NeutralAuditor:
+    """Layer 3 that abstains (constant 50.0).
+
+    Used for HISTORICAL REPLAY: the live LLM is far too slow for thousands of
+    cycles, and point-in-time news/fundamentals aren't available — so Layer 3
+    stays neutral and the scanner's point-in-time 32-marker signal drives the
+    decision, keeping the generated dataset lookahead-free.
+    """
+    def audit(self, prompt: str) -> float:
+        return 50.0
