@@ -3,6 +3,20 @@ import re
 import os
 from typing import Protocol, runtime_checkable
 
+
+def extract_score(text: str) -> float:
+    """Parse a 0-100 score from an LLM audit reply.
+
+    Prefers the mandated 'SCORE: <n>' suffix; falls back to the last number in
+    the text, and finally to a neutral 50.0. Shared by every Auditor backend.
+    """
+    match = re.search(r"SCORE:\s*([0-9.]+)", text, re.IGNORECASE)
+    if match:
+        return float(match.group(1))
+    nums = re.findall(r"\b\d{1,3}(?:\.\d+)?\b", text)
+    return float(nums[-1]) if nums else 50.0
+
+
 @runtime_checkable
 class Auditor(Protocol):
     """Layer 3 Auditor."""
@@ -37,11 +51,7 @@ class LLMAuditor:
             return 50.0  # Safe default on error
 
     def _extract_score(self, text: str) -> float:
-        match = re.search(r"SCORE:\s*([0-9.]+)", text, re.IGNORECASE)
-        if match:
-            return float(match.group(1))
-        nums = re.findall(r"\b\d{1,3}(?:\.\d+)?\b", text)
-        return float(nums[-1]) if nums else 50.0
+        return extract_score(text)
 
     def _call_local(self, prompt: str) -> float:
         from openai import OpenAI
