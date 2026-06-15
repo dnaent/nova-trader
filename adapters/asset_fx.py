@@ -10,6 +10,7 @@ class FxAdapter:
     """Forex Adapter integrating FX-specific Macro Gate and Scanner."""
     asset_class = "FX"
     handles = {"FX"}
+    strategy = "tactical"
 
     def __init__(self):
         self._last_gate_result = {}

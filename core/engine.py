@@ -83,8 +83,6 @@ class Engine:
             price = get_latest_price(pos["symbol"])
             if price is None:
                 continue
-            entry = Decimal(str(pos["price"]))
-            qty = Decimal(str(pos["quantity"]))
             stop = Decimal(str(pos["stop_loss"])) if pos["stop_loss"] is not None else None
             take = Decimal(str(pos["take_profit"])) if pos["take_profit"] is not None else None
 
@@ -95,15 +93,32 @@ class Engine:
                 exit_price, reason = take, "take-profit"
             if exit_price is None:
                 continue
+            self._close_position(ctx, pos, exit_price, reason)
 
-            realized = (exit_price - entry) * qty
-            sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
-                         symbol=pos["symbol"], side="SELL", quantity=qty,
-                         price=exit_price, notional=(exit_price * qty))
-            self.broker.place(sell, ctx)                       # nets the paper position flat
-            self.ledger.close_trade(pos["id"], exit_price, realized)
-            log.info("[%s] EXIT %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
-                     reason, exit_price, realized)
+    def _close_position(self, ctx: AccountContext, pos: dict, exit_price: Decimal,
+                        reason: str) -> None:
+        """Close one open position at exit_price: paper SELL + ledger close (which
+        backfills realized PnL + R onto the training record). Shared by stop/take
+        exits and regime de-risk liquidation."""
+        entry = Decimal(str(pos["price"]))
+        qty = Decimal(str(pos["quantity"]))
+        realized = (exit_price - entry) * qty
+        sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
+                     symbol=pos["symbol"], side="SELL", quantity=qty,
+                     price=exit_price, notional=(exit_price * qty))
+        self.broker.place(sell, ctx)                           # nets the paper position flat
+        self.ledger.close_trade(pos["id"], exit_price, realized)
+        log.info("[%s] EXIT %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
+                 reason, exit_price, realized)
+
+    def _liquidate_all(self, ctx: AccountContext, reason: str = "regime de-risk") -> None:
+        """Close every open position at the current market price (regime de-risk).
+        Unlike the old path, this fills at the real price and records realized PnL."""
+        from layers.data_loader import get_latest_price
+        for pos in self.ledger.open_trades(ctx.book_id):
+            price = get_latest_price(pos["symbol"])
+            if price is not None:
+                self._close_position(ctx, pos, price, reason)
 
     def run_cycle(self) -> None:
         # Within one cycle the macro gate and scan are identical for every book
@@ -150,39 +165,22 @@ class Engine:
             for adapter in self.asset_adapters:
                 if not (adapter.handles & ctx.allowed_assets):
                     continue  # this adapter's asset classes aren't permitted here
+                if getattr(adapter, "strategy", "tactical") != getattr(ctx, "strategy", "tactical"):
+                    continue  # this book runs a different strategy family (e.g. allocation)
 
                 if id(adapter) not in gate_cache:
                     gate_cache[id(adapter)] = adapter.macro_gate()
                 gate = gate_cache[id(adapter)]
-                if gate < self.cfg.gate_min:
+                book_gate_min = ctx.gate_min if ctx.gate_min is not None else self.cfg.gate_min
+                if gate < book_gate_min:
                     self.ledger.record_decision(ctx.book_id, None, gate, None, None,
                                                 None, acted=False,
                                                 reason="macro gate below floor")
                     log.info("[%s] gate %.0f < %.0f — holding cash",
-                             ctx.book_id, gate, self.cfg.gate_min)
-                             
-                    if self.cfg.aggressive_liquidation:
-                        log.info("[%s] AGGRESSIVE LIQUIDATION ENABLED. Liquidating open positions.", ctx.book_id)
-                        open_positions = self.broker.positions(ctx)
-                        for pos in open_positions:
-                            order = Order(
-                                book_id=ctx.book_id,
-                                account_id=ctx.ibkr_account_id,
-                                symbol=pos["symbol"],
-                                side="SELL",
-                                quantity=pos["quantity"],
-                                price=pos.get("market_price", Decimal("0")),
-                                notional=pos["quantity"] * pos.get("market_price", Decimal("0"))
-                            )
-                            fill = self.broker.place(order, ctx)
-                            self.ledger.record_trade(
-                                book_id=ctx.book_id, account_id=order.account_id, symbol=order.symbol,
-                                side=order.side, quantity=order.quantity, price=order.price,
-                                notional=order.notional, status=fill.get("status", "paper"),
-                                stop_loss=order.stop_loss, take_profit=order.take_profit,
-                                broker_ref=fill.get("broker_ref"),
-                            )
-                            log.info("[%s] LIQUIDATED %s qty=%s", ctx.book_id, order.symbol, order.quantity)
+                             ctx.book_id, gate, book_gate_min)
+                    # Regime de-risk: close to cash (per-book or global flag).
+                    if ctx.aggressive_liquidation or self.cfg.aggressive_liquidation:
+                        self._liquidate_all(ctx, reason="regime de-risk")
                     continue
 
                 open_symbols = [p["symbol"] for p in open_positions]

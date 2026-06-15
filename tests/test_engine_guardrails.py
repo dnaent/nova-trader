@@ -67,11 +67,16 @@ def test_max_concurrent_positions_skips_scan():
     assert led.performance_summary("b1")["trades_recorded"] == 0  # engine never scanned
     led.close()
 
-def test_aggressive_liquidation_sells_open_positions():
+def test_aggressive_liquidation_closes_positions(monkeypatch):
+    import layers.data_loader as dl
     eng, book, led, broker = _engine(_ActingAdapter(gate=30.0), aggressive=True)  # gate < floor
+    tid = led.record_trade("b1", "U1", "MSFT", "BUY", Decimal("1"), Decimal("100"),
+                           Decimal("100"))                # open position in the ledger
     broker.place(Order("b1", "U1", "MSFT", "BUY", Decimal("1"), Decimal("100"),
                        Decimal("100")), book)
+    monkeypatch.setattr(dl, "get_latest_price", lambda s: Decimal("90"))  # de-risk price
     eng.run_cycle()
-    sides = [r["side"] for r in led.conn.execute("SELECT side FROM trades")]
-    assert "SELL" in sides                              # liquidated the open position
+    assert led.open_trades("b1") == []                   # regime de-risk closed it
+    row = led.conn.execute("SELECT realized_pnl FROM trades WHERE id=?", (tid,)).fetchone()
+    assert row["realized_pnl"] == -10.0                  # (90-100)*1, real PnL recorded
     led.close()

@@ -11,6 +11,7 @@ class EquityAdapter:
     """Equity Adapter integrating Phase 2 Macro Gate and Scanner."""
     asset_class = "EQUITY"
     handles = {"EQUITY", "ETF"}
+    strategy = "tactical"
 
     def __init__(self):
         self.gate = MacroGate()
