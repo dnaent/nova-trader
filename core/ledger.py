@@ -238,6 +238,22 @@ class Ledger:
         ).fetchall()
         return [r["nav"] for r in rows]
 
+    def open_trades(self, book_id: Optional[str] = None) -> list[dict]:
+        """Open long paper positions: BUY trades not yet closed (realized_pnl NULL).
+
+        The ledger is the source of truth for open positions, so exit evaluation
+        is broker-agnostic.
+        """
+        q = ("SELECT id, book_id, account_id, symbol, quantity, price, stop_loss, "
+             "take_profit FROM trades WHERE side='BUY' AND realized_pnl IS NULL "
+             "AND status != 'closed'")
+        args: tuple = ()
+        if book_id:
+            q += " AND book_id=?"
+            args = (book_id,)
+        q += " ORDER BY id ASC"
+        return [dict(r) for r in self.conn.execute(q, args)]
+
     def get_peak_nav(self, book_id: str) -> Optional[float]:
         row = self.conn.execute(
             "SELECT MAX(nav) as peak FROM nav_history WHERE book_id=?", (book_id,)

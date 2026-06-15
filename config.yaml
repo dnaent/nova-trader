@@ -12,8 +12,8 @@ universe:
   EQUITY:
     - SPY
     - NVDA
-    - VWRL
-    - F      # Ford Motor Co (was "FORD" — not a valid Yahoo ticker)
+    - VWRL.L   # Vanguard FTSE All-World (LSE) — '.L' routes via yfinance fallback
+    - F        # Ford Motor Co (was "FORD" — not a valid Yahoo ticker)
   FX:
     - EURUSD=X   # Yahoo Finance FX ticker format
     - GBPUSD=X

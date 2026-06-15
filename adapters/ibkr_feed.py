@@ -107,12 +107,20 @@ class IBKRDataFeed:
 
     # ----- contracts ------------------------------------------------------ #
     def _contract(self, symbol: str):
-        """Build a best-effort IBKR contract. Unresolvable symbols return None
-        so the caller falls back to yfinance (e.g. LSE tickers, index proxies)."""
+        """Build a best-effort IBKR contract, or None to defer to yfinance.
+
+        Returns None for symbols this simple resolver can't map to a US
+        SMART/USD contract — international/suffixed tickers (e.g. 'VWRL.L') and
+        index proxies (e.g. 'DX-Y.NYB'). Proper exchange/currency mapping is a
+        later enhancement; until then those flow through the yfinance fallback
+        without noisy contract-resolution errors.
+        """
         from ib_async import Stock, Forex
         if _is_fx(symbol):
             pair = symbol.upper().replace("=X", "")   # 'EURUSD=X' -> 'EURUSD'
             return Forex(pair)
+        if "." in symbol or "-" in symbol:            # non-US / index proxy -> fallback
+            return None
         return Stock(symbol.upper(), "SMART", "USD")
 
     # ----- market data ---------------------------------------------------- #
@@ -122,6 +130,8 @@ class IBKRDataFeed:
             return None
         try:
             contract = self._contract(symbol)
+            if contract is None:
+                return None
             qualified = self._ib.qualifyContracts(contract)
             if not qualified:
                 return None
@@ -142,7 +152,7 @@ class IBKRDataFeed:
         try:
             from ib_async import util
             contract = self._contract(symbol)
-            if not self._ib.qualifyContracts(contract):
+            if contract is None or not self._ib.qualifyContracts(contract):
                 return pd.DataFrame()
             what = "MIDPOINT" if _is_fx(symbol) else "TRADES"
             bars = self._ib.reqHistoricalData(

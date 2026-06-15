@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 import pandas as pd
 try:
     import pandas_ta as ta  # original library (legacy/dev machines)
@@ -25,6 +26,27 @@ def set_price_feed(feed) -> None:
 def get_price_feed():
     """Return the currently registered price feed, if any."""
     return _PRICE_FEED
+
+
+def get_latest_price(symbol: str):
+    """Latest price as Decimal: real-time feed snapshot first, else last daily
+    close (which itself uses the feed/yfinance). None if unavailable.
+
+    Used by the engine's exit evaluation to mark open positions to market.
+    """
+    feed = _PRICE_FEED
+    if feed is not None:
+        try:
+            if feed.is_connected():
+                px = feed.get_price(symbol)
+                if px is not None:
+                    return px
+        except Exception:
+            pass
+    df = get_daily_data(symbol)
+    if df is not None and not df.empty and "Close" in df.columns:
+        return Decimal(str(df["Close"].iloc[-1]))
+    return None
 
 
 def get_daily_data(symbol: str, lookback_days: int = 365, use_cache: bool = True) -> pd.DataFrame:

@@ -40,10 +40,15 @@ DEFAULT_NAVS = {"ISA": 4000, "SIPP": 13000, "GIA": 2000, "MARGIN": 5000}
 
 
 def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
-                 model_name: str = "qwen2.5:7b-instruct"):
+                 model_name: str = "qwen2.5:7b-instruct",
+                 exec_threshold: float | None = None):
     """Assemble the paper-training engine. Returns (engine, books, ledger, feed)."""
     books = load_books("portfolio.yaml")
     cfg = load_engine_config("config.yaml")
+    if exec_threshold is not None:
+        # Paper-only override so the operator can deliberately exercise the full
+        # open->close->outcome loop while experimenting. Never affects live.
+        cfg.exec_threshold = exec_threshold
 
     feed = None
     if use_feed:
@@ -80,8 +85,10 @@ def report_validation(books, ledger) -> None:
 
 
 def run(cycles: int = 1, db_path: str = "nova_ledger.db", *,
-        use_feed: bool = True, validate: bool = True) -> None:
-    engine, books, ledger, feed = build_engine(db_path, use_feed=use_feed)
+        use_feed: bool = True, validate: bool = True,
+        exec_threshold: float | None = None) -> None:
+    engine, books, ledger, feed = build_engine(db_path, use_feed=use_feed,
+                                               exec_threshold=exec_threshold)
     try:
         for i in range(1, cycles + 1):
             log.info("=== cycle %d/%d ===", i, cycles)
@@ -100,11 +107,13 @@ def main() -> None:
     p.add_argument("--db", default="nova_ledger.db", help="ledger path (':memory:' to discard)")
     p.add_argument("--no-feed", action="store_true", help="skip IBKR feed, use yfinance only")
     p.add_argument("--no-validate", action="store_true", help="skip the validation report")
+    p.add_argument("--exec-threshold", type=float, default=None,
+                   help="paper-only blended-score override (e.g. 55) to exercise trades")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    run(cycles=args.cycles, db_path=args.db,
-        use_feed=not args.no_feed, validate=not args.no_validate)
+    run(cycles=args.cycles, db_path=args.db, use_feed=not args.no_feed,
+        validate=not args.no_validate, exec_threshold=args.exec_threshold)
 
 
 if __name__ == "__main__":

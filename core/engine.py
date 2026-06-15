@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from core.context import AccountContext, AssetAdapter, BrokerAdapter, Candidate
+from core.context import AccountContext, AssetAdapter, BrokerAdapter, Candidate, Order
 from core.ledger import Ledger
 from layers.analyst import Auditor
 
@@ -69,13 +69,52 @@ class Engine:
         self.ledger = ledger
         self.cfg = config
 
+    def _evaluate_exits(self, ctx: AccountContext) -> None:
+        """Mark open positions to market and close any that hit stop / take-profit.
+
+        Runs before new entries each cycle so existing risk is managed first. The
+        position is filled at the stop/take LEVEL (standard backtest convention),
+        giving clean R-multiples; close_trade() backfills realized PnL + R onto the
+        linked training record. Daily-resolution for now — intrabar fills need tick
+        data. Long-only paper; never executes live (paper stub).
+        """
+        from layers.data_loader import get_latest_price
+        for pos in self.ledger.open_trades(ctx.book_id):
+            price = get_latest_price(pos["symbol"])
+            if price is None:
+                continue
+            entry = Decimal(str(pos["price"]))
+            qty = Decimal(str(pos["quantity"]))
+            stop = Decimal(str(pos["stop_loss"])) if pos["stop_loss"] is not None else None
+            take = Decimal(str(pos["take_profit"])) if pos["take_profit"] is not None else None
+
+            exit_price = reason = None
+            if stop is not None and price <= stop:
+                exit_price, reason = stop, "stop-loss"
+            elif take is not None and price >= take:
+                exit_price, reason = take, "take-profit"
+            if exit_price is None:
+                continue
+
+            realized = (exit_price - entry) * qty
+            sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
+                         symbol=pos["symbol"], side="SELL", quantity=qty,
+                         price=exit_price, notional=(exit_price * qty))
+            self.broker.place(sell, ctx)                       # nets the paper position flat
+            self.ledger.close_trade(pos["id"], exit_price, realized)
+            log.info("[%s] EXIT %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
+                     reason, exit_price, realized)
+
     def run_cycle(self) -> None:
         for ctx in self.books:
             ctx.nav = self.broker.refresh_nav(ctx)
-            
+
             # 1. Update NAV history
             self.ledger.record_nav(ctx.book_id, ctx.nav)
-            
+
+            # 1b. Manage existing risk first: close positions that hit stop/take.
+            self._evaluate_exits(ctx)
+
             log.info("[%s] %s nav=%s allowed=%s", ctx.book_id, ctx.wrapper,
                      ctx.nav, sorted(ctx.allowed_assets))
 
