@@ -21,6 +21,16 @@ books:
       leverage: 1.0
       unit: shares
 
+  # SIPP — NOTE: IBKR is NOT a direct SIPP provider. At go-live this account is
+  # opened by a third-party UK SIPP administrator/trustee that permits an IBKR
+  # dealing account: the trustee holds the IBKR account in the pension scheme's
+  # name and grants the member trading authority. IBKR = custody + execution;
+  # the third party = the SIPP wrapper. The engine is account-agnostic, so only
+  # ibkr_account_id changes (placeholder -> the trustee-held sub-account). Before
+  # live: confirm the chosen administrator (a) permits IBKR and (b) allows the
+  # instruments traded. SIPP permitted-investment rules mean equities/ETFs only —
+  # NO FX/leverage/options (already enforced via allowed_assets). ISA/GIA/FOREX
+  # are native IBKR accounts and need no third party.
   - book_id: ibkr_sipp_equity
     wrapper: SIPP
     broker: IBKR
