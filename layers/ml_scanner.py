@@ -20,7 +20,8 @@ class MLScanner:
             df = get_technical_features(symbol, lookback_days=500)
             if df.empty or len(df) < 100:
                 continue
-                
+
+            df = df.copy()  # own the frame before adding Target (avoids SettingWithCopyWarning)
             # Create Target: 1 if the price in `prediction_horizon` days is higher than today, else 0
             df['Target'] = (df['Close'].shift(-self.prediction_horizon) > df['Close']).astype(int)
             

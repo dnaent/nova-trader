@@ -141,12 +141,13 @@ def report(books, ledger) -> None:
 
 
 def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 1,
-               exec_threshold: float = 50.0, auditor=None,
+               exec_threshold: float = 50.0, auditor=None, adapters=None,
                loader: Optional[Callable[[str], pd.DataFrame]] = None,
                calendar_symbol: str = "SPY", do_report: bool = True) -> Ledger:
     """Replay the engine over [start, end]. Returns the (open) Ledger.
 
-    The caller owns the returned ledger and should close() it.
+    `adapters` defaults to the live [EquityAdapter, FxAdapter]; inject custom
+    adapters for testing. The caller owns the returned ledger and should close().
     """
     feed = ReplayFeed(loader=loader)
     dl.set_price_feed(feed)
@@ -159,7 +160,7 @@ def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 
         broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs=dict(start_navs))
         broker.connect()
         ledger = Ledger(db_path)
-        engine = Engine(books, [EquityAdapter(), FxAdapter()], broker,
+        engine = Engine(books, adapters or [EquityAdapter(), FxAdapter()], broker,
                         auditor or NeutralAuditor(), ledger, cfg)
 
         # Trading calendar from the reference symbol's point-in-time index.

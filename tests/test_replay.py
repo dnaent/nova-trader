@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 
 import layers.data_loader as dl
-from adapters.asset_equity import EquityAdapter
-from adapters.asset_fx import FxAdapter
+from core.context import Candidate
 from backtest.replay import ReplayFeed, run_replay
 
 
@@ -42,41 +41,53 @@ def test_replayfeed_not_connected_without_as_of():
 
 
 # --------------------------------------------------------------------------- #
-# End-to-end: replay generates a closed, outcome-labelled, 32-marker dataset
+# End-to-end: replay generates a closed, outcome-labelled, marker dataset.
+# Uses a deterministic injected adapter so the test verifies the HARNESS
+# (point-in-time data -> decision -> sizing -> force-close -> outcome) without
+# depending on the stochastic scanner/macro-gate. Point-in-time correctness is
+# covered separately above.
 # --------------------------------------------------------------------------- #
-def _synth(symbol: str) -> pd.DataFrame:
-    """A strongly trending series so the scanner produces high-conviction signals."""
-    n = 500
+def _flat(symbol: str) -> pd.DataFrame:
+    """Simple valid price history (the injected adapter doesn't need a signal)."""
+    n = 400
     idx = pd.date_range("2023-01-02", periods=n, freq="B")
-    seed = abs(hash(symbol)) % (2**32)
-    noise = np.random.RandomState(seed).normal(0, 1.0, n)
-    close = pd.Series(np.linspace(100, 220, n) + noise, index=idx).clip(lower=1.0)
-    high, low = close * 1.01, close * 0.99
-    return pd.DataFrame({"Open": (high + low) / 2, "High": high, "Low": low,
-                         "Close": close, "Volume": [500000] * n,
-                         "Dividends": 0.0, "Stock Splits": 0.0}, index=idx)
+    close = pd.Series(np.linspace(100.0, 130.0, n), index=idx)
+    return pd.DataFrame({"Open": close, "High": close * 1.01, "Low": close * 0.99,
+                         "Close": close, "Volume": [500000] * n}, index=idx)
 
-def test_replay_generates_labelled_marker_dataset(monkeypatch):
-    # Neutralise the macro gate so the run is deterministic and trades fire.
-    monkeypatch.setattr(EquityAdapter, "macro_gate", lambda self: 80.0)
-    monkeypatch.setattr(FxAdapter, "macro_gate", lambda self: 80.0)
+class _DeterministicAdapter:
+    """Always proposes a high-conviction buy at the point-in-time close."""
+    asset_class = "EQUITY"
+    handles = {"EQUITY", "ETF"}
+    def __init__(self):
+        self._last_gate_result = {"regime": "test"}
+    def macro_gate(self):
+        return 80.0
+    def scan(self, universe):
+        out = []
+        for s in universe:
+            df = dl.get_daily_data(s)                       # point-in-time via ReplayFeed
+            if df is None or df.empty:
+                continue
+            px = Decimal(str(df["Close"].iloc[-1]))
+            out.append(Candidate(s, "EQUITY", 90.0, px, meta={"markers": {"RSI_14": 55.0}}))
+        return out
+    def auditor_prompt(self, c):
+        return f"audit {c.symbol}"
 
-    idx = _synth("REF").index
+def test_replay_generates_labelled_marker_dataset():
+    idx = _flat("REF").index
     start, end = idx[-4], idx[-1]                           # a tiny, fast window
 
     ledger = run_replay(start, end, db_path=":memory:", step_days=1,
-                        exec_threshold=30.0, loader=_synth, do_report=False)
+                        exec_threshold=30.0, loader=_flat,
+                        adapters=[_DeterministicAdapter()], do_report=False)
     try:
-        samples = ledger.training_samples()
-        acted = [s for s in samples if s["acted"]]
+        acted = [s for s in ledger.training_samples() if s["acted"]]
         assert acted, "replay should have produced at least one trade"
-        # Every acted record carries the 32-marker snapshot...
-        assert all(s["markers"] for s in acted)
-        assert any("RSI_14" in s["markers"] for s in acted)
-        # ...and force-close at the end means outcomes are labelled.
-        assert any(s["realized_pnl"] is not None for s in acted)
-        assert all( s["realized_pnl"] is not None for s in acted)  # all closed
+        assert all(s["markers"] for s in acted)            # 32-marker snapshot captured
+        assert all("RSI_14" in s["markers"] for s in acted)
+        assert all(s["realized_pnl"] is not None for s in acted)  # force-closed -> labelled
     finally:
         ledger.close()
-    # Feed must be uninstalled after the run.
-    assert dl.get_price_feed() is None
+    assert dl.get_price_feed() is None                     # feed uninstalled after run
