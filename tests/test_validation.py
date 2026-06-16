@@ -126,3 +126,35 @@ def test_validate_from_ledger_is_deterministic_and_routes_forex():
     names = {c.name for c in res.criteria}
     assert "walk_forward" in names and "monte_carlo_dd_p95" in names
     led.close()
+
+
+def test_mc_cap_field_overrides_drawdown_cap():
+    """mc_max_drawdown_pct changes ONLY the cap the p95 drawdown is judged
+    against (not the measured value) — used so regime-timed allocation books get
+    a book-honest MC bound while keeping their tight realised-DD rail."""
+    rets = [0.02, -0.05, 0.03, -0.08, 0.04, -0.02, 0.05, -0.06, 0.03, -0.04]
+    base = BookProfile(name="A", min_trades=0, max_drawdown_pct=5.0)
+    wide = BookProfile(name="A", min_trades=0, max_drawdown_pct=5.0,
+                       mc_max_drawdown_pct=10.0)
+    r1 = validate_book(base, pnls=rets, returns=rets, seed=7)
+    r2 = validate_book(wide, pnls=rets, returns=rets, seed=7)
+    mc1 = next(c for c in r1.criteria if c.name == "monte_carlo_dd_p95")
+    mc2 = next(c for c in r2.criteria if c.name == "monte_carlo_dd_p95")
+    assert mc1.value == pytest.approx(mc2.value)          # measured value unchanged
+    assert "<= 5%" in mc1.rule and "<= 10%" in mc2.rule    # cap differs
+    assert (not mc1.passed) or mc2.passed                  # wider cap is >= permissive
+
+
+def test_allocation_path_uses_60pct_positive_months_bar():
+    """Low-turnover allocation books reinterpret 'win rate' as % positive months
+    gated at 60% (not the tactical 70% trade win rate)."""
+    led = Ledger(":memory:")
+    ctx = AccountContext("ibkr_sipp_equity", "SIPP", "IBKR", "U", {"EQUITY", "ETF"},
+                         NullTaxPolicy(), NavPctSizing(), strategy="allocation",
+                         gate_min=75)
+    for i in range(700):
+        led.record_nav(ctx.book_id, Decimal(str(10000 + i * 5)))
+    res = validate_from_ledger(ctx, led, run_robustness=False)
+    wr = next(c for c in res.criteria if c.name == "win_rate")
+    assert ">= 60%" in wr.rule
+    led.close()

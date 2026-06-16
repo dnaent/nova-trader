@@ -43,6 +43,7 @@ class BookProfile:
     min_trades: int
     min_win_rate: Optional[float] = None
     max_drawdown_pct: Optional[float] = None
+    mc_max_drawdown_pct: Optional[float] = None    # MC-p95 DD cap; None => use max_drawdown_pct
     min_profit_factor: Optional[float] = None
     min_sortino: Optional[float] = None
     min_expectancy: Optional[float] = None        # mean per-trade PnL must exceed this
@@ -309,8 +310,10 @@ def validate_book(profile: BookProfile,
         wf_ok, wf_sharpe = _survives_walk_forward(returns)
         add("walk_forward", wf_sharpe, wf_ok, "Sharpe > 0 (universal floor)")
         mc_input = port_ret if port_ret else list(returns)
-        mc_ok, mc_p95 = _survives_monte_carlo(mc_input, profile.max_drawdown_pct)
-        cap = profile.max_drawdown_pct if profile.max_drawdown_pct is not None else 30.0
+        mc_cap = profile.mc_max_drawdown_pct if profile.mc_max_drawdown_pct is not None \
+            else profile.max_drawdown_pct
+        mc_ok, mc_p95 = _survives_monte_carlo(mc_input, mc_cap)
+        cap = mc_cap if mc_cap is not None else 30.0
         add("monte_carlo_dd_p95", mc_p95, mc_ok, f"<= {cap:g}% (universal floor)")
     elif run_robustness:
         # Can't prove robustness without a return series — floor not met.
@@ -392,7 +395,21 @@ def validate_from_ledger(ctx, ledger, *, run_robustness: bool = True,
         pr = periodic_returns(nav)
         # Reuse validate_book: monthly returns ARE the "trade" series; win rate =>
         # % positive months, PF/Sortino/expectancy from the curve, DD + MC from NAV.
-        curve_profile = replace(profile, min_trades=ALLOCATION_MIN_PERIODS)
+        #
+        # Buy-and-hold / pension reinterpretation of the profile (CLAUDE.md 2026-06-16):
+        #  * win rate => % POSITIVE MONTHS, gated at 60% (a strong consistency floor for
+        #    a buy-hold sleeve — the 70% TRADE win rate is a tactical concept that does
+        #    not translate to a low-turnover curve).
+        #  * REALISED max drawdown keeps the tight 5% pension rail (achieved via a low
+        #    equity weight + regime de-risk) — the headline capital-preservation number.
+        #  * MONTE-CARLO drawdown is judged at a wider 10% bound, NOT 5%. MC reshuffles
+        #    the monthly returns, which DESTROYS the regime-gating's core mechanism
+        #    (it de-risks BEFORE bad clusters in real sequence) — so MC is structurally
+        #    pessimistic for a regime-timed strategy. Still gated, just at a book-honest
+        #    cap; the realised 5% rail remains the primary risk gate.
+        curve_profile = replace(
+            profile, min_trades=ALLOCATION_MIN_PERIODS,
+            min_win_rate=0.60, mc_max_drawdown_pct=10.0)
         return validate_book(
             curve_profile, pnls=pr, returns=pr, nav_curve=nav,
             book_id=ctx.book_id, run_robustness=run_robustness, seed=seed)

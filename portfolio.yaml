@@ -51,7 +51,9 @@ books:
                                   # only sell on genuine deterioration (anti-whipsaw)
     sizing:
       type: nav_pct
-      max_per_position_pct: 90    # buy-and-hold the core holding
+      max_per_position_pct: 25    # conservative equity weight: keeps REALISED drawdown
+                                  # under the 5% pension rail while still compounding;
+                                  # regime de-risk moves the rest to cash in weak regimes
       leverage: 1.0
       unit: shares
       stop_pct: 0.30             # wide: exits are regime-driven, not stop-driven
