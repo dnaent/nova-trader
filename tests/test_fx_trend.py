@@ -80,10 +80,105 @@ def test_atr_sizing_short_brackets(monkeypatch):
     long = AtrSizing(leverage=5.0).size(
         Candidate("EURUSD=X", "FX", 80.0, Decimal("1.1000"), side="BUY"), ctx, 80.0)
     assert short.side == "SELL"
+    # Fixed ATR brackets, inverted for the short side; trailing OFF (fixed take
+    # captures the trend edge — the trailing-only variant destroyed PF).
     assert short.stop_loss > short.price and short.take_profit < short.price   # inverted
     assert long.stop_loss < long.price and long.take_profit > long.price       # normal
+    assert short.trailing_atr is None and long.trailing_atr is None
     # FX precision preserved (4 dp), not collapsed to 0.01.
     assert short.stop_loss == Decimal("1.1100")               # 1.10 + 2*0.005
+
+
+def test_trailing_stop_ratchets_long_and_exits(monkeypatch):
+    """A long's trailing stop ratchets UP as price rises, then exits on reversal."""
+    monkeypatch.setattr("core.risk.calculate_atr", lambda s: Decimal("0.0050"))
+    led = Ledger(":memory:")
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U_fx": 5000})
+    broker.connect()
+    ctx = _fx_book()
+    led.record_trade(ctx.book_id, "U_fx", "EURUSD=X", "BUY", Decimal("1000"),
+                     Decimal("1.10"), Decimal("1100"), stop_loss=Decimal("1.09"),
+                     trailing_atr=Decimal("2.0"))
+    broker.place(Order(ctx.book_id, "U_fx", "EURUSD=X", "BUY", Decimal("1000"),
+                       Decimal("1.10"), Decimal("1100")), ctx)
+    cfg = EngineConfig(universe=["EURUSD=X"], gate_min=40, exec_threshold=50)
+    engine = Engine([ctx], [], broker, StubAuditor(), led, cfg)
+    # Price rises to 1.12 -> trailing stop ratchets to 1.12 - 2*0.005 = 1.11 (no exit).
+    monkeypatch.setattr(dl, "get_latest_price", lambda s: Decimal("1.12"))
+    engine._evaluate_exits(ctx)
+    pos = led.open_trades(ctx.book_id)
+    assert pos and pos[0]["stop_loss"] == pytest.approx(1.11)   # ratcheted up
+    # Price reverses to 1.105 (< 1.11 trailed stop) -> exit with a locked-in gain.
+    monkeypatch.setattr(dl, "get_latest_price", lambda s: Decimal("1.105"))
+    engine._evaluate_exits(ctx)
+    assert led.open_trades(ctx.book_id) == []
+    assert led._closed_pnls(ctx.book_id)[0] > 0                 # exited above entry
+    led.close()
+
+
+def test_circuit_breaker_pauses_entries_after_streak():
+    """After N consecutive losses the breaker pauses new entries for a cooldown."""
+    from core.context import RiskGuardrails
+    led = Ledger(":memory:")
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U_fx": 5000})
+    broker.connect()
+    ctx = _fx_book()
+    ctx.guardrails = RiskGuardrails(circuit_breaker_losses=3, circuit_breaker_cooldown=5)
+    # Three closed losers in a row.
+    for _ in range(3):
+        tid = led.record_trade(ctx.book_id, "U_fx", "EURUSD=X", "BUY", Decimal("1"),
+                               Decimal("1.10"), Decimal("1.10"))
+        led.close_trade(tid, Decimal("1.09"), Decimal("-0.01"))
+    cfg = EngineConfig(universe=["EURUSD=X"], gate_min=40, exec_threshold=50)
+    engine = Engine([ctx], [], broker, StubAuditor(), led, cfg)
+    assert engine._circuit_broken(ctx) is True                 # trips on the 3-loss streak
+    assert engine._cb_cooldown[ctx.book_id] == 5
+    # A subsequent winning trade clears the streak once the cooldown elapses.
+    engine._cb_cooldown[ctx.book_id] = 0
+    tid = led.record_trade(ctx.book_id, "U_fx", "EURUSD=X", "BUY", Decimal("1"),
+                           Decimal("1.10"), Decimal("1.10"))
+    led.close_trade(tid, Decimal("1.12"), Decimal("0.02"))
+    assert engine._circuit_broken(ctx) is False                # streak broken by the win
+    led.close()
+
+
+def test_circuit_breaker_does_not_deadlock_after_cooldown():
+    """Regression: after a trip + cooldown with NO new trades, the breaker must NOT
+    re-trip on the SAME old streak (which froze the book — 121 trips, 26 trades)."""
+    from core.context import RiskGuardrails
+    led = Ledger(":memory:")
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U_fx": 5000})
+    broker.connect()
+    ctx = _fx_book()
+    ctx.guardrails = RiskGuardrails(circuit_breaker_losses=3, circuit_breaker_cooldown=2)
+    for _ in range(3):
+        tid = led.record_trade(ctx.book_id, "U_fx", "EURUSD=X", "BUY", Decimal("1"),
+                               Decimal("1.10"), Decimal("1.10"))
+        led.close_trade(tid, Decimal("1.09"), Decimal("-0.01"))
+    cfg = EngineConfig(universe=["EURUSD=X"], gate_min=40, exec_threshold=50)
+    engine = Engine([ctx], [], broker, StubAuditor(), led, cfg)
+    assert engine._circuit_broken(ctx) is True        # trips, cooldown=2
+    assert engine._circuit_broken(ctx) is True         # cooldown 2->1
+    assert engine._circuit_broken(ctx) is True         # cooldown 1->0 (still serving)
+    # Cooldown now elapsed and NO new trades closed: must NOT re-trip on the old streak.
+    assert engine._circuit_broken(ctx) is False
+    led.close()
+
+
+def test_circuit_breaker_off_for_equities():
+    """No circuit_breaker_losses (equities) => breaker never trips."""
+    led = Ledger(":memory:")
+    broker = IBKRAdapter(mode="paper", connector="stub", simulated_navs={"U": 5000})
+    broker.connect()
+    ctx = AccountContext("isa", "ISA", "IBKR", "U", {"EQUITY"}, NullTaxPolicy(), AtrSizing())
+    for _ in range(10):
+        tid = led.record_trade(ctx.book_id, "U", "SPY", "BUY", Decimal("1"),
+                               Decimal("100"), Decimal("100"))
+        led.close_trade(tid, Decimal("99"), Decimal("-1"))
+    cfg = EngineConfig(universe=["SPY"], gate_min=40, exec_threshold=50)
+    engine = Engine([ctx], [], broker, StubAuditor(), led, cfg)
+    assert engine._circuit_broken(ctx) is False                # off by default
+    led.close()
 
 
 # --------------------------------------------------------------------------- #

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS trades (
     realized_pnl REAL,                 -- NULL until the position is closed
     stop_loss    REAL,
     take_profit  REAL,
+    trailing_atr REAL,                 -- ATR multiple for trailing stops (FX trend); NULL => fixed-stop only
     broker_ref   TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_trades_book ON trades(book_id);
@@ -106,7 +107,14 @@ class Ledger:
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(_SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Idempotent column adds for DBs created before a schema bump."""
+        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(trades)")}
+        if "trailing_atr" not in cols:
+            self.conn.execute("ALTER TABLE trades ADD COLUMN trailing_atr REAL")
 
     # ----- writes --------------------------------------------------------- #
     def record_decision(self, book_id: str, symbol: Optional[str], gate: float,
@@ -125,18 +133,26 @@ class Ledger:
                      quantity: Decimal, price: Decimal, notional: Decimal,
                      status: str = "paper", stop_loss: Optional[Decimal] = None,
                      take_profit: Optional[Decimal] = None,
-                     broker_ref: Optional[str] = None) -> int:
+                     broker_ref: Optional[str] = None,
+                     trailing_atr: Optional[Decimal] = None) -> int:
         cur = self.conn.execute(
             "INSERT INTO trades (ts,book_id,account_id,symbol,side,quantity,price,"
-            "notional,status,stop_loss,take_profit,broker_ref) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "notional,status,stop_loss,take_profit,trailing_atr,broker_ref) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (_now(), book_id, account_id, symbol, side, float(quantity), float(price),
              float(notional), status,
              float(stop_loss) if stop_loss is not None else None,
-             float(take_profit) if take_profit is not None else None, broker_ref),
+             float(take_profit) if take_profit is not None else None,
+             float(trailing_atr) if trailing_atr is not None else None, broker_ref),
         )
         self.conn.commit()
         return cur.lastrowid
+
+    def update_stop(self, trade_id: int, stop_loss: Decimal) -> None:
+        """Ratchet a position's stop-loss (used by ATR trailing stops)."""
+        self.conn.execute("UPDATE trades SET stop_loss=? WHERE id=?",
+                          (float(stop_loss), trade_id))
+        self.conn.commit()
 
     def record_training_sample(self, *, book_id: str, symbol: str,
                                wrapper: Optional[str] = None,
@@ -248,7 +264,7 @@ class Ledger:
         is broker-agnostic.
         """
         q = ("SELECT id, book_id, account_id, symbol, side, quantity, price, stop_loss, "
-             "take_profit FROM trades WHERE realized_pnl IS NULL "
+             "take_profit, trailing_atr FROM trades WHERE realized_pnl IS NULL "
              "AND status != 'closed'")
         args: tuple = ()
         if book_id:

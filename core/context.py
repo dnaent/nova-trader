@@ -49,6 +49,8 @@ class RiskGuardrails:
     max_drawdown_pct: float = 15.0
     daily_loss_cap_pct: float = 3.0
     max_correlation: float = 0.8
+    circuit_breaker_losses: Optional[int] = None  # pause entries after N consecutive losses; None => off
+    circuit_breaker_cooldown: int = 10            # cycles to hold entries once tripped
 
 # --------------------------------------------------------------------------- #
 # Policies
@@ -150,6 +152,8 @@ def _build_guardrails(spec: dict) -> RiskGuardrails:
         max_drawdown_pct=spec.get("max_drawdown_pct", 15.0),
         daily_loss_cap_pct=spec.get("daily_loss_cap_pct", 3.0),
         max_correlation=spec.get("max_correlation", 0.8),
+        circuit_breaker_losses=spec.get("circuit_breaker_losses"),
+        circuit_breaker_cooldown=spec.get("circuit_breaker_cooldown", 10),
     )
 
 def load_books(manifest_path: str) -> list[AccountContext]:

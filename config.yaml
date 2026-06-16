@@ -19,8 +19,8 @@ universe:
     - NVDA
     - VWRL.L   # Vanguard FTSE All-World (LSE) — '.L' routes via yfinance fallback
     - F        # Ford Motor Co (was "FORD" — not a valid Yahoo ticker)
-  FX:
-    - EURUSD=X   # Yahoo Finance FX ticker format
+  FX:                # 4 majors (the proven v1 set with PF 2.12 edge)
+    - EURUSD=X
     - GBPUSD=X
     - USDJPY=X
     - AUDUSD=X

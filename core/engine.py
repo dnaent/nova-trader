@@ -68,6 +68,8 @@ class Engine:
         self.auditor = auditor
         self.ledger = ledger
         self.cfg = config
+        self._cb_cooldown: dict[str, int] = {}   # book_id -> remaining circuit-breaker cooldown cycles
+        self._cb_seen: dict[str, int] = {}       # book_id -> closed-trade count at the last trip (streak baseline)
 
     def _evaluate_exits(self, ctx: AccountContext) -> None:
         """Mark open positions to market and close any that hit stop / take-profit.
@@ -83,9 +85,14 @@ class Engine:
             price = get_latest_price(pos["symbol"])
             if price is None:
                 continue
+            side = pos.get("side", "BUY")
+            # Trailing stop (FX trend-following): ratchet the stop toward price so
+            # winners run and exit only on a trend reversal. Only positions sized
+            # with a trailing_atr trail; equities (trailing_atr NULL) keep their
+            # fixed stop unchanged.
+            self._update_trailing_stop(pos, price, side)
             stop = Decimal(str(pos["stop_loss"])) if pos["stop_loss"] is not None else None
             take = Decimal(str(pos["take_profit"])) if pos["take_profit"] is not None else None
-            side = pos.get("side", "BUY")
 
             exit_price = reason = None
             if side == "SELL":
@@ -102,6 +109,66 @@ class Engine:
             if exit_price is None:
                 continue
             self._close_position(ctx, pos, exit_price, reason)
+
+    def _circuit_broken(self, ctx: AccountContext) -> bool:
+        """True if the book's consecutive-loss circuit breaker is tripped (pause new
+        entries). Opt-in: guardrails.circuit_breaker_losses must be set (None for
+        equities => never trips). State (cooldown) lives on the engine instance, so
+        it persists across cycles within a run and resets on restart."""
+        n = ctx.guardrails.circuit_breaker_losses
+        if not n:
+            return False
+        remaining = self._cb_cooldown.get(ctx.book_id, 0)
+        if remaining > 0:
+            self._cb_cooldown[ctx.book_id] = remaining - 1
+            log.info("[%s] Circuit breaker active (%d cycles left). Holding entries.",
+                     ctx.book_id, remaining)
+            return True
+        # Count the trailing run of consecutive losses among trades closed AFTER the
+        # last trip's baseline. Without the baseline the same old streak would re-trip
+        # immediately after every cooldown (entries are paused, so no new winner can
+        # break it) — freezing the book. Serving the cooldown IS the reset.
+        closed = self.ledger._closed_pnls(ctx.book_id)
+        baseline = self._cb_seen.get(ctx.book_id, 0)
+        streak = 0
+        for pnl in reversed(closed[baseline:]):
+            if pnl < 0:
+                streak += 1
+            else:
+                break
+        if streak >= n:
+            self._cb_cooldown[ctx.book_id] = ctx.guardrails.circuit_breaker_cooldown
+            self._cb_seen[ctx.book_id] = len(closed)     # consume this streak; don't recount it
+            log.warning("[%s] Circuit breaker TRIPPED (%d consecutive losses). "
+                        "Pausing entries for %d cycles.", ctx.book_id, streak,
+                        ctx.guardrails.circuit_breaker_cooldown)
+            return True
+        return False
+
+    def _update_trailing_stop(self, pos: dict, price: Decimal, side: str) -> None:
+        """Ratchet a trailing stop toward price (FX trend-following). No-op for
+        positions without a trailing_atr (e.g. equities) — their fixed stop holds.
+        Long: stop only rises (price - n*ATR). Short: stop only falls (price + n*ATR).
+        Mutates pos['stop_loss'] in place and persists it."""
+        trail = pos.get("trailing_atr")
+        if trail is None:
+            return
+        from core.risk import calculate_atr
+        atr = calculate_atr(pos["symbol"])
+        if atr <= 0:
+            return
+        dist = Decimal(str(trail)) * atr
+        cur = Decimal(str(pos["stop_loss"])) if pos["stop_loss"] is not None else None
+        if side == "SELL":
+            new_stop = price + dist
+            if cur is None or new_stop < cur:
+                pos["stop_loss"] = float(new_stop)
+                self.ledger.update_stop(pos["id"], new_stop)
+        else:
+            new_stop = price - dist
+            if cur is None or new_stop > cur:
+                pos["stop_loss"] = float(new_stop)
+                self.ledger.update_stop(pos["id"], new_stop)
 
     def _close_position(self, ctx: AccountContext, pos: dict, exit_price: Decimal,
                         reason: str) -> None:
@@ -174,8 +241,15 @@ class Engine:
             # 4. Check Max Concurrent Positions
             open_positions = self.broker.positions(ctx)
             if len(open_positions) >= ctx.guardrails.max_concurrent_positions:
-                log.info("[%s] Max concurrent positions (%d) reached. Skipping scans.", 
+                log.info("[%s] Max concurrent positions (%d) reached. Skipping scans.",
                          ctx.book_id, len(open_positions))
+                continue
+
+            # 5. Consecutive-loss circuit breaker (opt-in per book; off for equities).
+            #    After N consecutive losing closed trades, pause NEW entries for a
+            #    cooldown so a trend strategy doesn't keep re-entering a choppy regime.
+            #    Existing positions still exit normally above.
+            if self._circuit_broken(ctx):
                 continue
 
             for adapter in self.asset_adapters:
@@ -267,6 +341,7 @@ class Engine:
                         notional=order.notional, status=fill.get("status", "paper"),
                         stop_loss=order.stop_loss, take_profit=order.take_profit,
                         broker_ref=fill.get("broker_ref"),
+                        trailing_atr=order.trailing_atr,
                     )
                     self.ledger.record_decision(ctx.book_id, c.symbol, gate, c.quant_score,
                                                 claude_score, blended, acted=True,

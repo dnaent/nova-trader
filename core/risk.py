@@ -161,10 +161,13 @@ class AtrSizing:
         quantum = Decimal("0.0001") if price < Decimal("50") else Decimal("0.01")
         stop_dist = atr * self.stop_atr_multiplier
         take_dist = atr * self.take_atr_multiplier
+        # Fixed ATR take-profit captures the move (this is what gave the trend book
+        # its edge: PF 2.12). A trailing-only / no-take variant gave back ~2 ATR per
+        # winner and destroyed the profit factor (PF 0.74) — reverted 2026-06-16.
+        # trailing_atr is left OFF on the order (engine trails only when set).
         if side == "SELL":
-            # Short: stop ABOVE entry, take-profit BELOW entry.
-            stop_loss = (price + stop_dist).quantize(quantum)
-            take_profit = (price - take_dist).quantize(quantum)
+            stop_loss = (price + stop_dist).quantize(quantum)   # short: stop ABOVE entry
+            take_profit = (price - take_dist).quantize(quantum)  # ...take BELOW
         else:
             stop_loss = (price - stop_dist).quantize(quantum)
             take_profit = (price + take_dist).quantize(quantum)
@@ -179,7 +182,7 @@ class AtrSizing:
             notional=notional,
             stop_loss=stop_loss,
             take_profit=take_profit,
-            trailing_atr=self.trailing_atr_multiplier,
+            trailing_atr=None,          # trailing OFF: fixed take captures the trend edge
             meta={"capacity_factor": str(capacity), "atr": str(atr)}
         )
 

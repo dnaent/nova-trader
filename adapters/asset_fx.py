@@ -8,7 +8,9 @@ from layers.data_loader import (get_daily_data, get_technical_features,
                                 get_recent_news, format_markers)
 
 # Tunables for the FX trend strategy (deterministic, point-in-time).
-ADX_MIN = 20.0          # below this the pair is ranging -> no trend trade
+ADX_MIN = 20.0          # below this the pair is ranging -> no trend trade. (ADX 23 +
+                        # 8 pairs in the risk overhaul thinned trades without helping
+                        # edge — reverted to the proven 20 / 4-pair v1.)
 EXCLUDE_COLS = {"Open", "High", "Low", "Close", "Volume", "Dividends", "Stock Splits"}
 
 

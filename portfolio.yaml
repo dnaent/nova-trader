@@ -99,5 +99,8 @@ books:
     guardrails:
       max_drawdown_pct: 20.0          # Forex profile: DD <= 20%
       daily_loss_cap_pct: 3.0
-      max_concurrent_positions: 6     # caps simultaneous FX exposure
+      max_concurrent_positions: 4     # caps simultaneous FX exposure (tightened 6->4
+                                      # in the risk overhaul to cut concurrent drawdown)
       max_correlation: 0.8
+      circuit_breaker_losses: 6       # pause new entries after 6 consecutive losses
+      circuit_breaker_cooldown: 15    # ...for 15 trading cycles (let the choppy regime pass)
