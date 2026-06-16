@@ -354,7 +354,7 @@ class Engine:
 # =========================================================================== #
 # Self-contained demo
 # =========================================================================== #
-def _demo() -> None:
+def _demo() -> None:  # pragma: no cover  (manual demonstration, not unit-tested)
     from core.context import load_books
     from adapters.broker_ibkr import IBKRAdapter
     from adapters.asset_equity import EquityAdapter
@@ -385,5 +385,5 @@ def _demo() -> None:
         print(ledger.performance_summary(b.book_id))
     print(ledger.performance_summary())  # ALL
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     _demo()
