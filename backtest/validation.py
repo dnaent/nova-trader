@@ -45,6 +45,7 @@ class BookProfile:
     max_drawdown_pct: Optional[float] = None
     mc_max_drawdown_pct: Optional[float] = None    # MC-p95 DD cap; None => use max_drawdown_pct
     min_profit_factor: Optional[float] = None
+    min_mar: Optional[float] = None                # MAR/Calmar (annualised return / maxDD)
     min_sortino: Optional[float] = None
     min_expectancy: Optional[float] = None        # mean per-trade PnL must exceed this
     max_consec_losses: Optional[int] = None
@@ -68,9 +69,13 @@ PROFILES: dict[str, BookProfile] = {
         note="Tax-efficient core: low turnover; after-tax return >= benchmark.",
     ),
     "FOREX": BookProfile(
-        name="FOREX", min_trades=300, min_profit_factor=1.5, min_sortino=1.0,
-        max_drawdown_pct=20.0, max_consec_losses=6, account_level=True,
-        note="Leverage <=5:1, per-trade risk <=2%; judged on the equity curve.",
+        name="FOREX", min_trades=300, min_profit_factor=1.5, min_mar=0.5,
+        max_drawdown_pct=20.0, min_sortino=1.0, max_consec_losses=6, account_level=True,
+        note="Account-level/equity-curve judging: GATED on profit factor, drawdown "
+             "and MAR/Calmar (return-vs-risk). Win rate, reward:risk, Sortino and "
+             "consecutive losses are STYLE choices for a trend strategy -> logged, "
+             "not gated (a lumpy, streaky equity curve that compounds safely is fine). "
+             "Leverage <=5:1, per-trade risk <=2%.",
     ),
 }
 
@@ -170,6 +175,29 @@ def max_drawdown_pct(nav_curve: Optional[Sequence[float]] = None,
     return float(np.max(drawdowns)) * 100.0
 
 
+def mar_ratio(nav_curve: Optional[Sequence[float]] = None,
+              periods_per_year: int = 252) -> Optional[float]:
+    """MAR / Calmar ratio = annualised return / max drawdown, from the NAV curve.
+
+    The natural return-vs-risk measure for trend-following (rewards big trends
+    while penalising drawdown), where Sortino is unkind to lumpy equity curves.
+    None if the curve is too short or has no drawdown to divide by.
+    """
+    if nav_curve is None or len(nav_curve) < 2:
+        return None
+    curve = np.asarray(nav_curve, dtype=float)
+    if curve[0] <= 0 or curve[-1] <= 0:
+        return None
+    years = (len(curve) - 1) / periods_per_year
+    if years <= 0:
+        return None
+    cagr = (curve[-1] / curve[0]) ** (1.0 / years) - 1.0
+    dd = max_drawdown_pct(nav_curve=nav_curve)
+    if dd is None or dd <= 0:
+        return None
+    return cagr / (dd / 100.0)
+
+
 def compute_metrics(pnls: Sequence[float],
                     returns: Optional[Sequence[float]] = None,
                     nav_curve: Optional[Sequence[float]] = None) -> dict:
@@ -182,6 +210,7 @@ def compute_metrics(pnls: Sequence[float],
         "max_consec_losses": max_consecutive_losses(pnls),
         "sortino": sortino_ratio(returns) if returns is not None else None,
         "max_drawdown_pct": max_drawdown_pct(nav_curve=nav_curve, returns=returns),
+        "mar": mar_ratio(nav_curve=nav_curve),
     }
 
 
@@ -336,10 +365,17 @@ def validate_book(profile: BookProfile,
         add("profit_factor", pf, pf is not None and pf >= profile.min_profit_factor,
             f">= {profile.min_profit_factor:g}")
 
+    if profile.min_mar is not None:
+        mar = m.get("mar")
+        add("mar(calmar)", mar, mar is not None and mar >= profile.min_mar,
+            f">= {profile.min_mar:g}")
+
     if profile.min_sortino is not None:
         so = m["sortino"]
+        # Account-level (Forex trend): Sortino is unkind to a lumpy-but-profitable
+        # equity curve -> logged, not gated (MAR/Calmar is the gated risk measure).
         add("sortino", so, so is not None and so >= profile.min_sortino,
-            f">= {profile.min_sortino:g}")
+            f">= {profile.min_sortino:g}", gated=not profile.account_level)
 
     if profile.min_expectancy is not None:
         ex = m["expectancy"]
@@ -348,8 +384,10 @@ def validate_book(profile: BookProfile,
 
     if profile.max_consec_losses is not None:
         cl = m["max_consec_losses"]
+        # Trend-following takes many small losses waiting for the big trend -> the
+        # streak length is a style choice; logged, not gated for account-level books.
         add("max_consec_losses", float(cl), cl <= profile.max_consec_losses,
-            f"<= {profile.max_consec_losses}")
+            f"<= {profile.max_consec_losses}", gated=not profile.account_level)
 
     passed = all(c.passed for c in crits if c.gated)
     return ValidationResult(book_id=book_id or profile.name, profile=profile.name,

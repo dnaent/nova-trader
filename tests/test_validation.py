@@ -128,6 +128,21 @@ def test_validate_from_ledger_is_deterministic_and_routes_forex():
     led.close()
 
 
+def test_forex_profile_gates_mar_logs_sortino_and_streaks():
+    """Account-level FOREX (trend): MAR/Calmar is GATED; Sortino and consecutive
+    losses are LOGGED but NOT gated (style choices for a lumpy trend equity curve)."""
+    pnls = [10, -5, 20, -8, 15, -6, 12, -4, 18]
+    rets = [p / 100 for p in pnls]
+    nav = [5000, 5100, 5050, 5200, 5150, 5300, 5250, 5400, 5350, 5500]
+    res = validate_book(PROFILES["FOREX"], pnls=pnls, returns=rets, nav_curve=nav,
+                        run_robustness=False, seed=1)
+    by = {c.name: c for c in res.criteria}
+    assert by["mar(calmar)"].gated is True            # return-vs-risk is the gate
+    assert by["profit_factor"].gated is True
+    assert by["sortino"].gated is False               # logged, not gated
+    assert by["max_consec_losses"].gated is False     # logged, not gated
+
+
 def test_mc_cap_field_overrides_drawdown_cap():
     """mc_max_drawdown_pct changes ONLY the cap the p95 drawdown is judged
     against (not the measured value) — used so regime-timed allocation books get

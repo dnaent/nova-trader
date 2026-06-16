@@ -90,7 +90,10 @@ books:
       higher_rate: false              # set true if a higher-rate taxpayer
     sizing:
       type: atr_sizing
-      risk_pct: 2.0                   # per-trade risk <= 2% of NAV
+      risk_pct: 1.0                   # per-trade risk (reduced to 1% to bring the trend
+                                      # book's drawdown under the 20% cap with margin;
+                                      # sizing scales DD but NOT PF/MAR/sample, which
+                                      # all already pass — 6-pair exposure needed 1%, not 1.5%)
       leverage: 5.0                   # leverage cap <= 5:1 (notional <= 5 x NAV)
       unit: units
       stop_atr_multiplier: 2.0
