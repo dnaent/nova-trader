@@ -7,6 +7,7 @@ from core.risk import NavPctSizing
 from adapters.broker_ibkr import IBKRAdapter
 from adapters.asset_allocation import AllocationAdapter
 from layers.analyst import StubAuditor
+from backtest.validation import validate_from_ledger, periodic_returns
 
 
 # --------------------------------------------------------------------------- #
@@ -83,6 +84,29 @@ def test_engine_routes_each_book_to_its_strategy():
     assert _symbols(led, "t") == {"TACT"}            # tactical book ran only the tactical adapter
     assert _symbols(led, "a") == {"ALLOC"}           # allocation book ran only the allocation adapter
     led.close()
+
+# --------------------------------------------------------------------------- #
+# Curve-based validation for low-turnover (allocation) books
+# --------------------------------------------------------------------------- #
+def test_periodic_returns_from_curve():
+    pr = periodic_returns(list(range(100, 143)), period=21)   # rising 43-pt curve
+    assert len(pr) == 2 and all(r > 0 for r in pr)
+    assert periodic_returns([1, 2, 3], period=21) == []       # too short
+
+def test_allocation_book_validated_on_equity_curve():
+    led = Ledger(":memory:")
+    # A steadily rising mark-to-market curve (mostly positive months, tiny DD).
+    for i in range(700):
+        led.record_nav("ibkr_sipp_equity", Decimal(str(10000 + i * 5)))
+    ctx = _book("ibkr_sipp_equity", strategy="allocation", gate_min=75)
+    res = validate_from_ledger(ctx, led, run_robustness=False)
+    # Routed to the curve path: win rate = % positive months (high on a rising curve),
+    # and the sample criterion is track-record length, not 150 trades.
+    assert res.metrics["win_rate"] is not None and res.metrics["win_rate"] > 0.9
+    sample = next(c for c in res.criteria if c.name == "sample_size")
+    assert sample.passed is True                              # ~33 months >= 30
+    led.close()
+
 
 def test_derisk_hysteresis_holds_through_dip(monkeypatch):
     """With a de-risk floor below gate_min, a gate in the hold band must NOT

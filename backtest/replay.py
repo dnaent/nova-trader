@@ -182,11 +182,17 @@ def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 
 
         for i, d in enumerate(calendar, 1):
             feed.set_as_of(d)
-            # Compound the equity curve: NAV = start + realised PnL so far.
+            # MARK-TO-MARKET equity curve: NAV = start + realised PnL + unrealised
+            # P&L of open positions (priced at the as-of close). Realized-only NAV
+            # is flat during holds and understates true drawdown — wrong especially
+            # for buy-and-hold. This records the honest equity curve for validation.
             for b in books:
-                broker.set_simulated_nav(
-                    b.ibkr_account_id,
-                    start_navs[b.ibkr_account_id] + ledger.realized_pnl_total(b.book_id))
+                nav = start_navs[b.ibkr_account_id] + ledger.realized_pnl_total(b.book_id)
+                for pos in ledger.open_trades(b.book_id):
+                    px = dl.get_latest_price(pos["symbol"])
+                    if px is not None:
+                        nav += float(px - Decimal(str(pos["price"]))) * float(pos["quantity"])
+                broker.set_simulated_nav(b.ibkr_account_id, nav)
             engine.run_cycle()
             if i % 25 == 0:
                 log.info("  ...step %d/%d (%s)", i, len(calendar), d.date())

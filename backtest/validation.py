@@ -353,15 +353,55 @@ def validate_book(profile: BookProfile,
                             passed=passed, metrics=m, criteria=crits)
 
 
+def periodic_returns(nav_curve: Optional[Sequence[float]], period: int = 21) -> list:
+    """Approx periodic (~monthly = 21 trading days) returns from a daily NAV curve.
+
+    For LOW-TURNOVER books, validation rests on the equity curve, not on a handful
+    of round-trips: the curve's monthly returns give a meaningful win rate
+    (% positive months), profit factor, Sortino and expectancy.
+    """
+    if nav_curve is None or len(nav_curve) < period + 1:
+        return []
+    pts = list(nav_curve)[::period]
+    out = []
+    for a, b in zip(pts[:-1], pts[1:]):
+        if a:
+            out.append((b - a) / a)
+    return out
+
+
+# Track-record length (in ~monthly periods) required for a low-turnover book in
+# lieu of the trade-count floor.
+ALLOCATION_MIN_PERIODS = 30
+
+
 def validate_from_ledger(ctx, ledger, *, run_robustness: bool = True,
                          seed: Optional[int] = None) -> ValidationResult:
-    """Validate a book straight from the ledger using its AccountContext."""
+    """Validate a book from the ledger using its AccountContext.
+
+    Low-turnover ('allocation') books are judged on the EQUITY-CURVE: monthly
+    returns stand in for the trade series (a true low-turnover strategy makes too
+    few round-trips for trade-count statistics), and the trade-count floor becomes
+    a track-record-length floor. Tactical books use the per-trade path.
+    """
+    from dataclasses import replace
     profile = profile_for_book(ctx)
+    nav = ledger.nav_series(ctx.book_id)
+
+    if getattr(ctx, "strategy", "tactical") == "allocation":
+        pr = periodic_returns(nav)
+        # Reuse validate_book: monthly returns ARE the "trade" series; win rate =>
+        # % positive months, PF/Sortino/expectancy from the curve, DD + MC from NAV.
+        curve_profile = replace(profile, min_trades=ALLOCATION_MIN_PERIODS)
+        return validate_book(
+            curve_profile, pnls=pr, returns=pr, nav_curve=nav,
+            book_id=ctx.book_id, run_robustness=run_robustness, seed=seed)
+
     return validate_book(
         profile,
         pnls=ledger._closed_pnls(ctx.book_id),
         returns=ledger.closed_returns(ctx.book_id),
-        nav_curve=ledger.nav_series(ctx.book_id),
+        nav_curve=nav,
         book_id=ctx.book_id,
         run_robustness=run_robustness,
         seed=seed,
