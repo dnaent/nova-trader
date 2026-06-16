@@ -27,6 +27,17 @@ def test_feed_unconnected_is_safe():
     assert feed.get_daily_bars("SPY").empty
 
 
+def test_contract_routing():
+    """US equities -> IBKR Stock; FX -> Forex; index/non-US -> None (yfinance)."""
+    feed = IBKRDataFeed(port=9999)
+    assert feed._contract("SPY") is not None                 # US equity
+    assert feed._contract("EURUSD=X") is not None            # FX
+    # Yahoo index symbols and non-US/suffixed tickers defer to yfinance (no noisy
+    # IBKR contract errors in the macro gate's hot path).
+    for sym in ("^VIX", "^VIX3M", "^TNX", "^IRX", "DX-Y.NYB", "VWRL.L"):
+        assert feed._contract(sym) is None, sym
+
+
 # --------------------------------------------------------------------------- #
 # data_loader integration: feed is primary, yfinance is the fallback
 # --------------------------------------------------------------------------- #

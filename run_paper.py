@@ -66,6 +66,10 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
 
     auditor = LLMAuditor(backend="local", model_name=model_name)
     ledger = Ledger(db_path)
+    # Rehydrate the paper book from the persistent ledger so a fresh process (the
+    # daily forward cron) sees positions it already holds — otherwise the
+    # correlation / max-concurrent guards would re-buy held positions each run.
+    broker.seed_positions(ledger.open_trades())
     engine = Engine(books, [EquityAdapter(), FxAdapter(), AllocationAdapter()],
                     broker, auditor, ledger, cfg)
     return engine, books, ledger, feed

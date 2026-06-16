@@ -59,6 +59,25 @@ class IBKRAdapter:
         reflect realised PnL as an equity curve. No effect on live connectors."""
         self._navs[account_id] = Decimal(str(nav))
 
+    def seed_positions(self, open_trades: list[dict]) -> None:
+        """Paper-only: rehydrate the in-memory book from the ledger's OPEN trades.
+
+        The stub's positions live in memory, so a NEW process (e.g. the daily
+        forward paper-training cron) would otherwise start flat and re-buy
+        positions it already holds. Seeding from the ledger (the persistent source
+        of truth) makes the correlation / max-concurrent guards see real holdings
+        across invocations. Each open trade -> one fill entry the netting in
+        positions() understands. No effect on live connectors."""
+        if self.connector != "stub":
+            return
+        for t in open_trades:
+            self._positions.append({
+                "status": "paper", "symbol": t["symbol"],
+                "side": t.get("side", "BUY"), "quantity": str(t["quantity"]),
+                "price": str(t["price"]), "account_id": t["account_id"],
+                "broker_ref": f"SEED-{t.get('id', '')}",
+            })
+
     # ----- account / positions ------------------------------------------- #
     def refresh_nav(self, ctx: AccountContext) -> Decimal:
         if self.connector == "stub":

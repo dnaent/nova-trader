@@ -110,8 +110,9 @@ class IBKRDataFeed:
         """Build a best-effort IBKR contract, or None to defer to yfinance.
 
         Returns None for symbols this simple resolver can't map to a US
-        SMART/USD contract — international/suffixed tickers (e.g. 'VWRL.L') and
-        index proxies (e.g. 'DX-Y.NYB'). Proper exchange/currency mapping is a
+        SMART/USD contract — international/suffixed tickers (e.g. 'VWRL.L'),
+        index proxies (e.g. 'DX-Y.NYB') and Yahoo index symbols ('^VIX', '^TNX').
+        Proper exchange/currency mapping is a
         later enhancement; until then those flow through the yfinance fallback
         without noisy contract-resolution errors.
         """
@@ -119,8 +120,8 @@ class IBKRDataFeed:
         if _is_fx(symbol):
             pair = symbol.upper().replace("=X", "")   # 'EURUSD=X' -> 'EURUSD'
             return Forex(pair)
-        if "." in symbol or "-" in symbol:            # non-US / index proxy -> fallback
-            return None
+        if symbol.startswith("^") or "." in symbol or "-" in symbol:
+            return None                               # Yahoo index (^VIX) / non-US -> yfinance fallback
         return Stock(symbol.upper(), "SMART", "USD")
 
     # ----- market data ---------------------------------------------------- #
