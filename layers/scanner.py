@@ -14,7 +14,7 @@ class RegimeAwareScanner:
                 continue
                 
             close = df['Close'].iloc[-1]
-            returns = df['Close'].pct_change()
+            returns = df['Close'].pct_change(fill_method=None)
             
             if is_trend_regime:
                 mom = (close / df['Close'].iloc[-21]) - 1

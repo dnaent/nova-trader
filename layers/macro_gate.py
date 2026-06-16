@@ -24,7 +24,7 @@ class MacroGate:
         if any(df.empty for df in [spy, vix, vix3m, tlt, gld]):
             return {"gate_score": 50.0, "hmm_safe_prob": 0.5}
             
-        spy_returns = spy['Close'].pct_change().dropna()
+        spy_returns = spy['Close'].pct_change(fill_method=None).dropna()
         safe_prob = predict_regime_prob(spy_returns)
         
         current_vix = vix['Close'].iloc[-1]
@@ -38,8 +38,8 @@ class MacroGate:
         
         df_corr = pd.DataFrame({
             'SPY': spy_returns,
-            'TLT': tlt['Close'].pct_change(),
-            'GLD': gld['Close'].pct_change()
+            'TLT': tlt['Close'].pct_change(fill_method=None),
+            'GLD': gld['Close'].pct_change(fill_method=None)
         }).dropna()
         
         recent_corr = df_corr.iloc[-30:].corr()

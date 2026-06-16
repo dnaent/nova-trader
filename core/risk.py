@@ -16,13 +16,13 @@ def check_correlation(candidate_symbol: str, open_symbols: list[str], max_corr: 
         cand_df = get_daily_data(candidate_symbol, lookback_days=90)
         if cand_df.empty or "Close" not in cand_df.columns:
             return False, ""
-        cand_returns = cand_df["Close"].pct_change().dropna()
-        
+        cand_returns = cand_df["Close"].pct_change(fill_method=None).dropna()
+
         for osym in open_symbols:
             o_df = get_daily_data(osym, lookback_days=90)
             if o_df.empty or "Close" not in o_df.columns:
                 continue
-            o_returns = o_df["Close"].pct_change().dropna()
+            o_returns = o_df["Close"].pct_change(fill_method=None).dropna()
             
             # Align indices
             aligned = pd.concat([cand_returns, o_returns], axis=1, join="inner")
