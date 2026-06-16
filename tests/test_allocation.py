@@ -41,9 +41,10 @@ def test_sipp_book_uses_allocation():
     assert sipp.strategy == "allocation"
     assert sipp.gate_min == 75
     assert sipp.aggressive_liquidation is True
-    # tactical books stay tactical with the global gate (unchanged behaviour)
+    # tactical books stay tactical; ISA/GIA carry their VALIDATED per-book gates
     assert books["ibkr_isa_equity"].strategy == "tactical"
-    assert books["ibkr_isa_equity"].gate_min is None
+    assert books["ibkr_isa_equity"].gate_min == 80
+    assert books["ibkr_gia_equity"].gate_min == 78
 
 
 # --------------------------------------------------------------------------- #

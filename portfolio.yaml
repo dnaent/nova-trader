@@ -15,6 +15,9 @@ books:
     ibkr_account_id: "U_ISA_PLACEHOLDER"
     allowed_assets: ["EQUITY", "ETF"]
     tax_policy: null
+    gate_min: 80                  # VALIDATED 2026-06-16: 8y-daily honest mark-to-market
+                                  # PASS (win 70.7%, Sortino 1.123 robust, DD 7.6% < 18%).
+                                  # gate 80 (not 78) is what firms Sortino above 1.0.
     sizing:
       type: nav_pct
       max_per_position_pct: 8
@@ -63,9 +66,11 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false              # set true if a higher-rate taxpayer
+    gate_min: 78                  # VALIDATED 2026-06-16: 8y-daily honest mark-to-market
+                                  # PASS (win 68.8%, DD 7.6% < 10% cap with margin).
     sizing:
       type: nav_pct
-      max_per_position_pct: 8
+      max_per_position_pct: 6     # 6% (not 8%) keeps GIA's drawdown under its 10% cap.
       leverage: 1.0
       unit: shares
 

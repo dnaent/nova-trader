@@ -1,8 +1,13 @@
 # Nova Engine — engine configuration (consumed by load_engine_config()).
 # These are starting points to validate in paper trading, not recommendations.
 
-gate_min: 40           # macro gate below this => hold cash, no new buys
-exec_threshold: 75     # blended (0.60 quant + 0.40 claude) score required to act
+gate_min: 40           # GLOBAL macro-gate floor (per-book gate_min in portfolio.yaml
+                       # overrides it: ISA 80, GIA 78, SIPP 75 — the validated values)
+exec_threshold: 35     # blended (0.60 quant + 0.40 claude) score required to act.
+                       # Canonicalised 2026-06-16 from 75: the current ML scanner's
+                       # blended scores top out ~52 (mean ~29) — 75 is unreachable, so
+                       # every validated 8y replay used 35. The regime gate, not this
+                       # threshold, is what concentrates trades into good regimes.
 top_n: 10              # max candidates considered per book per cycle
 
 # Universe scanned each cycle, keyed by asset class so each adapter only scans

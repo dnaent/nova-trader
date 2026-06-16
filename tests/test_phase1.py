@@ -130,7 +130,7 @@ def test_load_books_and_config():
     assert "FX" not in by_id["ibkr_sipp_equity"].allowed_assets
     cfg = load_engine_config("config.yaml")
     assert cfg.gate_min == 40
-    assert cfg.exec_threshold == 75
+    assert cfg.exec_threshold == 35   # canonicalised 2026-06-16 (scanner blended tops ~52)
     # Structured universe routes per asset class via universe_for(handles).
     assert "NVDA" in cfg.universe_for({"EQUITY", "ETF"})
     assert "EURUSD=X" in cfg.universe_for({"FX"})
