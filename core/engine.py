@@ -85,30 +85,46 @@ class Engine:
                 continue
             stop = Decimal(str(pos["stop_loss"])) if pos["stop_loss"] is not None else None
             take = Decimal(str(pos["take_profit"])) if pos["take_profit"] is not None else None
+            side = pos.get("side", "BUY")
 
             exit_price = reason = None
-            if stop is not None and price <= stop:
-                exit_price, reason = stop, "stop-loss"
-            elif take is not None and price >= take:
-                exit_price, reason = take, "take-profit"
+            if side == "SELL":
+                # Short: stop is ABOVE entry (loss), take-profit BELOW (gain).
+                if stop is not None and price >= stop:
+                    exit_price, reason = stop, "stop-loss"
+                elif take is not None and price <= take:
+                    exit_price, reason = take, "take-profit"
+            else:
+                if stop is not None and price <= stop:
+                    exit_price, reason = stop, "stop-loss"
+                elif take is not None and price >= take:
+                    exit_price, reason = take, "take-profit"
             if exit_price is None:
                 continue
             self._close_position(ctx, pos, exit_price, reason)
 
     def _close_position(self, ctx: AccountContext, pos: dict, exit_price: Decimal,
                         reason: str) -> None:
-        """Close one open position at exit_price: paper SELL + ledger close (which
-        backfills realized PnL + R onto the training record). Shared by stop/take
-        exits and regime de-risk liquidation."""
+        """Close one open position at exit_price: places the offsetting paper order
+        + ledger close (which backfills realized PnL + R onto the training record).
+        Shared by stop/take exits and regime de-risk liquidation. Direction-aware:
+        a long (BUY) is closed by a SELL with PnL (exit-entry)*qty; a short (SELL)
+        is closed by a BUY with PnL (entry-exit)*qty."""
         entry = Decimal(str(pos["price"]))
         qty = Decimal(str(pos["quantity"]))
-        realized = (exit_price - entry) * qty
-        sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
-                     symbol=pos["symbol"], side="SELL", quantity=qty,
-                     price=exit_price, notional=(exit_price * qty))
-        self.broker.place(sell, ctx)                           # nets the paper position flat
+        side = pos.get("side", "BUY")
+        if side == "SELL":
+            realized = (entry - exit_price) * qty
+            close_side = "BUY"
+        else:
+            realized = (exit_price - entry) * qty
+            close_side = "SELL"
+        offset = Order(book_id=ctx.book_id, account_id=pos["account_id"],
+                       symbol=pos["symbol"], side=close_side, quantity=qty,
+                       price=exit_price, notional=(exit_price * qty))
+        self.broker.place(offset, ctx)                         # nets the paper position flat
         self.ledger.close_trade(pos["id"], exit_price, realized)
-        log.info("[%s] EXIT %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
+        log.info("[%s] EXIT %s %s (%s) @ %s pnl=%s", ctx.book_id, side, pos["symbol"],
                  reason, exit_price, realized)
 
     def _liquidate_all(self, ctx: AccountContext, reason: str = "regime de-risk") -> None:

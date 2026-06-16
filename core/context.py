@@ -19,9 +19,11 @@ from typing import Protocol, runtime_checkable, Optional, Iterable
 class Candidate:
     """A ranked trade idea emerging from Layer 2 (the deterministic scanner)."""
     symbol: str
-    asset_class: str            # "EQUITY" | "ETF" | (future) "FX"
+    asset_class: str            # "EQUITY" | "ETF" | "FX"
     quant_score: float          # 0-100, from the scanner
     price: Decimal              # current price, used for sizing
+    side: str = "BUY"           # "BUY" (long) | "SELL" (short). Equities are long-only;
+                                # FX trend-following signals both directions.
     meta: dict = field(default_factory=dict)
 
 @dataclass

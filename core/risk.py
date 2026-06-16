@@ -127,20 +127,21 @@ class AtrSizing:
     def size(self, candidate: Candidate, ctx: AccountContext, gate_score: float) -> Order:
         capacity = gate_capacity(gate_score)
         price = Decimal(candidate.price)
-        
+        side = getattr(candidate, "side", "BUY")     # FX trend-following signals both sides
+
         # Calculate ATR
         atr = calculate_atr(candidate.symbol)
-        
+
         if atr == Decimal("0") or price == Decimal("0"):
             # Fallback to zero sizing if ATR cannot be calculated
             return Order(
-                book_id=ctx.book_id, account_id=ctx.ibkr_account_id, symbol=candidate.symbol, side="BUY",
+                book_id=ctx.book_id, account_id=ctx.ibkr_account_id, symbol=candidate.symbol, side=side,
                 quantity=Decimal("0"), price=price, notional=Decimal("0")
             )
-            
+
         # Capital at risk = NAV * risk_pct * gate_capacity
         capital_at_risk = (ctx.nav * (self.risk_pct / Decimal("100")) * capacity)
-        
+
         # Number of shares = capital at risk / (ATR * stop multiplier)
         qty = (capital_at_risk / (atr * self.stop_atr_multiplier)).to_integral_value(rounding=ROUND_DOWN)
 
@@ -153,15 +154,26 @@ class AtrSizing:
         if notional > max_notional and price > 0:
             qty = (max_notional / price).to_integral_value(rounding=ROUND_DOWN)
             notional = (qty * price).quantize(Decimal("0.01"))
-        
-        stop_loss = (price - (atr * self.stop_atr_multiplier)).quantize(Decimal("0.01"))
-        take_profit = (price + (atr * self.take_atr_multiplier)).quantize(Decimal("0.01"))
-        
+
+        # Price precision: quantizing FX stops/takes to 0.01 destroys pip-level
+        # risk (EURUSD ATR ~0.005). Use 4 dp for sub-50 prices (FX majors), 2 dp
+        # otherwise (equities, USDJPY).
+        quantum = Decimal("0.0001") if price < Decimal("50") else Decimal("0.01")
+        stop_dist = atr * self.stop_atr_multiplier
+        take_dist = atr * self.take_atr_multiplier
+        if side == "SELL":
+            # Short: stop ABOVE entry, take-profit BELOW entry.
+            stop_loss = (price + stop_dist).quantize(quantum)
+            take_profit = (price - take_dist).quantize(quantum)
+        else:
+            stop_loss = (price - stop_dist).quantize(quantum)
+            take_profit = (price + take_dist).quantize(quantum)
+
         return Order(
             book_id=ctx.book_id,
             account_id=ctx.ibkr_account_id,
             symbol=candidate.symbol,
-            side="BUY",
+            side=side,
             quantity=qty,
             price=price,
             notional=notional,

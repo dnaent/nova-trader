@@ -117,14 +117,20 @@ def _force_close_all(engine: Engine, books, label: str = "end-of-replay") -> Non
                 continue
             entry = Decimal(str(pos["price"]))
             qty = Decimal(str(pos["quantity"]))
-            realized = (price - entry) * qty
-            sell = Order(book_id=ctx.book_id, account_id=pos["account_id"],
-                         symbol=pos["symbol"], side="SELL", quantity=qty,
-                         price=price, notional=(price * qty))
-            engine.broker.place(sell, ctx)
+            side = pos.get("side", "BUY")
+            if side == "SELL":                                 # short: PnL inverts, cover with BUY
+                realized = (entry - price) * qty
+                close_side = "BUY"
+            else:
+                realized = (price - entry) * qty
+                close_side = "SELL"
+            offset = Order(book_id=ctx.book_id, account_id=pos["account_id"],
+                           symbol=pos["symbol"], side=close_side, quantity=qty,
+                           price=price, notional=(price * qty))
+            engine.broker.place(offset, ctx)
             engine.ledger.close_trade(pos["id"], price, realized)
-            log.info("[%s] CLOSE %s (%s) @ %s pnl=%s", ctx.book_id, pos["symbol"],
-                     label, price, realized)
+            log.info("[%s] CLOSE %s %s (%s) @ %s pnl=%s", ctx.book_id, side,
+                     pos["symbol"], label, price, realized)
 
 
 def report(books, ledger) -> None:
@@ -191,7 +197,8 @@ def run_replay(start, end, *, db_path: str = "nova_replay.db", step_days: int = 
                 for pos in ledger.open_trades(b.book_id):
                     px = dl.get_latest_price(pos["symbol"])
                     if px is not None:
-                        nav += float(px - Decimal(str(pos["price"]))) * float(pos["quantity"])
+                        delta = float(px - Decimal(str(pos["price"]))) * float(pos["quantity"])
+                        nav += -delta if pos.get("side") == "SELL" else delta   # short P&L inverts
                 broker.set_simulated_nav(b.ibkr_account_id, nav)
             engine.run_cycle()
             if i % 25 == 0:

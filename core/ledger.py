@@ -239,13 +239,16 @@ class Ledger:
         return [r["nav"] for r in rows]
 
     def open_trades(self, book_id: Optional[str] = None) -> list[dict]:
-        """Open long paper positions: BUY trades not yet closed (realized_pnl NULL).
+        """Open paper positions not yet closed (realized_pnl NULL): BUY (long) and
+        SELL (short, FX trend-following). The ``side`` is returned so exit P&L and
+        stop/take logic can be direction-aware. Equities only ever open BUY, so
+        their behaviour is unchanged.
 
         The ledger is the source of truth for open positions, so exit evaluation
         is broker-agnostic.
         """
-        q = ("SELECT id, book_id, account_id, symbol, quantity, price, stop_loss, "
-             "take_profit FROM trades WHERE side='BUY' AND realized_pnl IS NULL "
+        q = ("SELECT id, book_id, account_id, symbol, side, quantity, price, stop_loss, "
+             "take_profit FROM trades WHERE realized_pnl IS NULL "
              "AND status != 'closed'")
         args: tuple = ()
         if book_id:

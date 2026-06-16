@@ -78,8 +78,10 @@ class IBKRAdapter:
                     if p["side"] == "SELL":
                         qty = -qty
                     pos_map[sym] = pos_map.get(sym, Decimal("0")) + qty
-            return [{"symbol": sym, "quantity": qty, "market_price": Decimal("0")} 
-                    for sym, qty in pos_map.items() if qty > 0]
+            # qty != 0 (not > 0) so net-SHORT FX positions are reported too; for
+            # long-only equities qty>0 and qty!=0 are equivalent (no change).
+            return [{"symbol": sym, "quantity": qty, "market_price": Decimal("0")}
+                    for sym, qty in pos_map.items() if qty != 0]
         raise NotImplementedError
 
     # ----- execution ------------------------------------------------------ #
