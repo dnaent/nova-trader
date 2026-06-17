@@ -102,6 +102,12 @@ class NeutralAuditor:
     cycles, and point-in-time news/fundamentals aren't available — so Layer 3
     stays neutral and the scanner's point-in-time 32-marker signal drives the
     decision, keeping the generated dataset lookahead-free.
+
+    ``uses_prompt = False`` lets the engine skip building the Inference Context
+    Bundle (which fetches news/financials over the network) since this auditor
+    ignores the prompt entirely — a large replay speedup with identical results.
     """
+    uses_prompt = False
+
     def audit(self, prompt: str) -> float:
         return 50.0

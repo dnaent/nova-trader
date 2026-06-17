@@ -110,6 +110,49 @@ def _mixed(symbol: str) -> pd.DataFrame:
                          "Volume": [500000] * n, "Dividends": 0.0, "Stock Splits": 0.0},
                         index=idx)
 
+# --------------------------------------------------------------------------- #
+# Auditor prompt-skip optimisation: an auditor that abstains (uses_prompt=False,
+# e.g. NeutralAuditor in replay) must NOT trigger the expensive Inference Context
+# Bundle build (news/financials network fetch) — and the result is identical.
+# --------------------------------------------------------------------------- #
+class _PromptSpyAdapter(_DeterministicAdapter):
+    """Counts auditor_prompt() calls so we can prove the engine skips them."""
+    def __init__(self):
+        super().__init__()
+        self.prompt_calls = 0
+    def auditor_prompt(self, c):
+        self.prompt_calls += 1
+        return f"audit {c.symbol}"
+
+def test_neutral_auditor_skips_prompt_build():
+    idx = _flat("REF").index
+    start, end = idx[-4], idx[-1]
+    adapter = _PromptSpyAdapter()
+    ledger = run_replay(start, end, db_path=":memory:", step_days=1,
+                        exec_threshold=30.0, loader=_flat,
+                        adapters=[adapter], do_report=False)   # default NeutralAuditor
+    try:
+        acted = [s for s in ledger.training_samples() if s["acted"]]
+        assert acted, "replay should still trade with the prompt skipped"
+        assert adapter.prompt_calls == 0, "NeutralAuditor (uses_prompt=False) must skip prompt build"
+        assert all(s["claude_score"] == 50.0 for s in ledger.training_samples())
+    finally:
+        ledger.close()
+
+def test_prompt_using_auditor_still_builds_prompt():
+    from layers.analyst import StubAuditor                    # uses_prompt defaults True
+    idx = _flat("REF").index
+    start, end = idx[-4], idx[-1]
+    adapter = _PromptSpyAdapter()
+    ledger = run_replay(start, end, db_path=":memory:", step_days=1,
+                        exec_threshold=30.0, loader=_flat,
+                        adapters=[adapter], auditor=StubAuditor(), do_report=False)
+    try:
+        assert adapter.prompt_calls > 0, "a prompt-using auditor must build the Inference Context Bundle"
+    finally:
+        ledger.close()
+
+
 def test_real_scanner_runs_through_replay(monkeypatch):
     import adapters.asset_equity as ae
     from adapters.asset_equity import EquityAdapter

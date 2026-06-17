@@ -301,7 +301,13 @@ class Engine:
                         log.info("[%s] Skip %s: %s", ctx.book_id, c.symbol, corr_reason)
                         continue
 
-                    claude_score = self.auditor.audit(adapter.auditor_prompt(c))
+                    # Build the Inference Context Bundle only if the auditor uses
+                    # it. Auditors that abstain (NeutralAuditor in replay) set
+                    # uses_prompt=False, letting us skip the per-candidate
+                    # news/financials network fetch — a large replay speedup with
+                    # identical scores (constant abstention either way).
+                    prompt = adapter.auditor_prompt(c) if getattr(self.auditor, "uses_prompt", True) else ""
+                    claude_score = self.auditor.audit(prompt)
                     blended = 0.60 * c.quant_score + 0.40 * claude_score
 
                     # Full Inference Context Bundle now exists (macro regime + the
