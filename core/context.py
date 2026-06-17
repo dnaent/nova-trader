@@ -51,6 +51,9 @@ class RiskGuardrails:
     max_correlation: float = 0.8
     circuit_breaker_losses: Optional[int] = None  # pause entries after N consecutive losses; None => off
     circuit_breaker_cooldown: int = 10            # cycles to hold entries once tripped
+    crash_derisk_dd_pct: Optional[float] = None   # mark-to-market drawdown that forces active
+                                                  # liquidation to cash (vs the slow HMM gate); None => off.
+                                                  # Should be < max_drawdown_pct. Re-entry is regime-gated.
 
 # --------------------------------------------------------------------------- #
 # Policies
@@ -154,6 +157,7 @@ def _build_guardrails(spec: dict) -> RiskGuardrails:
         max_correlation=spec.get("max_correlation", 0.8),
         circuit_breaker_losses=spec.get("circuit_breaker_losses"),
         circuit_breaker_cooldown=spec.get("circuit_breaker_cooldown", 10),
+        crash_derisk_dd_pct=spec.get("crash_derisk_dd_pct"),
     )
 
 def load_books(manifest_path: str) -> list[AccountContext]:

@@ -70,6 +70,8 @@ class Engine:
         self.cfg = config
         self._cb_cooldown: dict[str, int] = {}   # book_id -> remaining circuit-breaker cooldown cycles
         self._cb_seen: dict[str, int] = {}       # book_id -> closed-trade count at the last trip (streak baseline)
+        self._crash_state: dict[str, str] = {}   # book_id -> crash de-risk state ("armed"|"confirmed"|absent)
+        self._crash_peak: dict[str, float] = {}  # book_id -> crash de-risk high-water mark (resets on re-entry)
 
     def _evaluate_exits(self, ctx: AccountContext) -> None:
         """Mark open positions to market and close any that hit stop / take-profit.
@@ -262,16 +264,60 @@ class Engine:
                     gate_cache[id(adapter)] = adapter.macro_gate()
                 gate = gate_cache[id(adapter)]
                 book_gate_min = ctx.gate_min if ctx.gate_min is not None else self.cfg.gate_min
+                derisk_floor = ctx.derisk_gate if ctx.derisk_gate is not None else book_gate_min
+
+                # Crash de-risk circuit-breaker (opt-in: guardrails.crash_derisk_dd_pct).
+                # The HMM macro gate LAGS a slow grind-down (e.g. Oct-2007 -> mid-2008
+                # stayed above the floor while equity bled 15%+). This actively
+                # liquidates to cash the moment the book's mark-to-market drawdown
+                # breaches the threshold — capping the tail near that level — then
+                # BLOCKS re-entry until the regime is CONFIRMED to have turned (gate
+                # falls below the de-risk floor) AND recovered (gate back >= the entry
+                # floor). Re-entry is regime-gated, NOT drawdown-gated: cash can't
+                # recover NAV (a DD-based re-entry would deadlock), and re-entering on
+                # the still-lagging-high gate would churn straight back into the grind.
+                crash_dd = ctx.guardrails.crash_derisk_dd_pct
+                if crash_dd is not None:
+                    nav_f = float(ctx.nav)
+                    state = self._crash_state.get(ctx.book_id)
+                    # Crash high-water mark, tracked on the engine (NOT the ledger's
+                    # all-time peak): it resets to the re-entry NAV on disarm so a
+                    # post-crash re-entry — still below the pre-crash peak — isn't
+                    # measured against that old peak and re-tripped immediately, and
+                    # can ride the recovery.
+                    peak = max(self._crash_peak.get(ctx.book_id, nav_f), nav_f)
+                    self._crash_peak[ctx.book_id] = peak
+                    if state is None:
+                        dd = ((peak - nav_f) / peak) * 100.0 if peak > 0 else 0.0
+                        if dd >= crash_dd:
+                            self._liquidate_all(ctx, reason=f"crash de-risk (DD {dd:.1f}% >= {crash_dd:.1f}%)")
+                            self._crash_state[ctx.book_id] = "armed"
+                            log.warning("[%s] CRASH de-risk TRIPPED (DD %.1f%% >= %.1f%%). "
+                                        "Cash until regime recovers.", ctx.book_id, dd, crash_dd)
+                            continue
+                    else:
+                        if state == "armed" and gate < derisk_floor:
+                            self._crash_state[ctx.book_id] = state = "confirmed"
+                        if state == "confirmed" and gate >= book_gate_min:
+                            self._crash_state[ctx.book_id] = None
+                            self._crash_peak[ctx.book_id] = nav_f      # reset HWM at re-entry
+                            log.info("[%s] CRASH de-risk CLEARED (gate %.0f >= %.0f). Re-entry enabled.",
+                                     ctx.book_id, gate, book_gate_min)
+                            # fall through: re-entry permitted this cycle
+                        else:
+                            if self.broker.positions(ctx):     # ensure flat while waiting
+                                self._liquidate_all(ctx, reason="crash de-risk hold")
+                            continue
+
                 if gate < book_gate_min:
                     self.ledger.record_decision(ctx.book_id, None, gate, None, None,
                                                 None, acted=False,
                                                 reason="macro gate below floor")
                     log.info("[%s] gate %.0f < %.0f — holding cash (no new entries)",
                              ctx.book_id, gate, book_gate_min)
-                    # Regime de-risk uses a separate (typically lower) exit floor so
-                    # positions hold through minor dips and only liquidate on genuine
-                    # deterioration — hysteresis to prevent whipsaw.
-                    derisk_floor = ctx.derisk_gate if ctx.derisk_gate is not None else book_gate_min
+                    # Regime de-risk uses a separate (typically lower) exit floor
+                    # (derisk_floor, computed above) so positions hold through minor
+                    # dips and only liquidate on genuine deterioration — anti-whipsaw.
                     if (ctx.aggressive_liquidation or self.cfg.aggressive_liquidation) \
                             and gate < derisk_floor:
                         self._liquidate_all(ctx, reason="regime de-risk")
