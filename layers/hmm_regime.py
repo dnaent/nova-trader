@@ -1,6 +1,15 @@
+import logging
 import numpy as np
 import pandas as pd
 import warnings
+
+# hmmlearn emits "Model is not converging" via the `logging` module (not warnings),
+# so the warnings filter inside predict_regime_prob can't suppress it and it floods
+# every replay/forward log. The GaussianHMM oscillates just below tol on noisy
+# return series (deltas ~-0.05) — benign, but it drowns the real signal in logs the
+# operator reviews. Silence the library logger's sub-WARNING chatter at the source;
+# genuine errors (>=ERROR) still surface.
+logging.getLogger("hmmlearn").setLevel(logging.ERROR)
 
 def predict_regime_prob(returns: pd.Series, lookback: int = 252) -> float:
     """
