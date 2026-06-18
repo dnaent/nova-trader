@@ -65,8 +65,16 @@ PROFILES: dict[str, BookProfile] = {
         note="Tax-free growth/high-reward: realise freely; honest (not forced) win rate.",
     ),
     "GIA": BookProfile(
-        name="GIA", min_trades=150, min_win_rate=0.60, max_drawdown_pct=10.0,
-        note="Tax-efficient core: low turnover; after-tax return >= benchmark.",
+        # CANONICAL 2026-06-18: GIA MIRRORS THE ISA MANDATE. Drawdown is a market
+        # property, not a tax property (Wrapper⊥Strategy) — so the old tighter GIA
+        # caps (win>=60%, DD<=10%) were logically incoherent for the SAME strategy
+        # and assets. GIA now shares ISA's market-risk profile; tax efficiency is a
+        # realization-timing OVERLAY (defer CGT, harvest losses vs the £3k AEA, low
+        # turnover), NOT a different risk profile.
+        name="GIA", min_trades=150, min_profit_factor=1.6, min_expectancy=0.0,
+        max_drawdown_pct=18.0, min_sortino=1.0, min_win_rate=0.45,
+        note="Tax-efficient core: SAME market-risk mandate as ISA; tax efficiency is "
+             "a realization-timing overlay, not a tighter risk profile.",
     ),
     "FOREX": BookProfile(
         name="FOREX", min_trades=300, min_profit_factor=1.5, min_mar=0.5,

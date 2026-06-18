@@ -19,10 +19,19 @@ books:
                                   # PASS (win 70.7%, Sortino 1.123 robust, DD 7.6% < 18%).
                                   # gate 80 (not 78) is what firms Sortino above 1.0.
     sizing:
-      type: nav_pct
-      max_per_position_pct: 8
-      leverage: 1.0
+      type: atr_sizing            # CANONICAL 2026-06-18: risk-based (vol-throttled) sizing.
+                                  # Replaces flat nav_pct. HALVED the GFC out-of-sample
+                                  # Monte-Carlo tail (MC 18.3%->8.5%) with ZERO in-sample
+                                  # regression — ATR stops widen in a crash so size auto-shrinks
+                                  # (constant per-trade risk). Only residual GFC failure is the
+                                  # size-invariant Sortino (~0.71), the strategy's 2008 shape.
+      risk_pct: 0.35              # per-trade risk = 0.35% of NAV (~matches old nav_pct effective
+                                  # risk: 8% position x 5% stop; now with the vol-throttle)
+      leverage: 0.35              # REUSED as a per-position NOTIONAL CAP (notional <= NAV*0.35)
+                                  # to bound single-name concentration — NOT margin.
       unit: shares
+      stop_atr_multiplier: 2.0
+      take_atr_multiplier: 4.0    # 2:1 reward:risk
 
   # SIPP — NOTE: IBKR is NOT a direct SIPP provider. At go-live this account is
   # opened by a third-party UK SIPP administrator/trustee that permits an IBKR
@@ -68,13 +77,21 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false              # set true if a higher-rate taxpayer
-    gate_min: 78                  # VALIDATED 2026-06-16: 8y-daily honest mark-to-market
-                                  # PASS (win 68.8%, DD 7.6% < 10% cap with margin).
+    gate_min: 80                  # MIRRORS ISA (was 78, tuned for the old nav_pct GIA): now
+                                  # that GIA runs ISA's strategy/sizing/mandate, it uses ISA's
+                                  # gate. gate 80 firms in-sample Sortino >= 1.0 (0.84 at 78).
+    # CANONICAL 2026-06-18: GIA mirrors the ISA strategy + sizing. Per "Wrapper⊥Strategy",
+    # drawdown is a market property, not a tax property — so GIA shares ISA's market-risk
+    # MANDATE (see validation.py GIA profile, now = ISA's). Tax efficiency is a separate
+    # realization-timing overlay (defer CGT, harvest losses vs the £3k AEA, low turnover),
+    # not a tighter risk profile. Risk-based ATR sizing halved GIA's GFC MC tail (17.8->8.9%).
     sizing:
-      type: nav_pct
-      max_per_position_pct: 6     # 6% (not 8%) keeps GIA's drawdown under its 10% cap.
-      leverage: 1.0
+      type: atr_sizing
+      risk_pct: 0.35
+      leverage: 0.35              # per-position notional cap (notional <= NAV*0.35), not margin
       unit: shares
+      stop_atr_multiplier: 2.0
+      take_atr_multiplier: 4.0
 
   # Leveraged spot Forex. Wrapper-locked to a taxable margin account — FX/options
   # must NEVER appear in ISA/SIPP allowed_assets. CGT applies to spot FX gains for

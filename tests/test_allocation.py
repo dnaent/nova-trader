@@ -44,7 +44,7 @@ def test_sipp_book_uses_allocation():
     # tactical books stay tactical; ISA/GIA carry their VALIDATED per-book gates
     assert books["ibkr_isa_equity"].strategy == "tactical"
     assert books["ibkr_isa_equity"].gate_min == 80
-    assert books["ibkr_gia_equity"].gate_min == 78
+    assert books["ibkr_gia_equity"].gate_min == 80   # mirrors ISA (2026-06-18)
 
 
 # --------------------------------------------------------------------------- #
