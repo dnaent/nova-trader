@@ -10,6 +10,19 @@ exec_threshold: 35     # blended (0.60 quant + 0.40 claude) score required to ac
                        # threshold, is what concentrates trades into good regimes.
 top_n: 10              # max candidates considered per book per cycle
 
+# SIPP allocation basket (PATH A, 2026-06-18): equal-weight ACCUMULATING (Acc)
+# thematic ETFs for the long-horizon pension — AI/tech infra, data centres,
+# critical metals/materials, renewables. All full-Acc (no Dist), UK-listed UCITS.
+# NOTE: these funds are 2019-2022 inceptions, so HISTORICAL REPLAY/validation uses
+# long-history sector PROXIES (QQQ/VNQ/XME/PBW) injected by the backtest; this list
+# is the LIVE/forward-paper basket. The SIPP book raises max_correlation so all four
+# correlated themes are actually held (equal-weight), not de-duplicated.
+allocation_basket:
+  - AIAG.L   # L&G Artificial Intelligence UCITS (GBP Acc)        [proxy QQQ]
+  - VPNG.L   # Global X Data Center REITs & Digital Infra (GBP Acc) [proxy VNQ]
+  - REGB.L   # VanEck Rare Earth & Strategic Metals (GBP Acc)      [proxy XME]
+  - INRA.L   # iShares Global Clean Energy Transition (USD Acc)    [proxy PBW/INRG]
+
 # Universe scanned each cycle, keyed by asset class so each adapter only scans
 # symbols it handles (EquityAdapter -> EQUITY/ETF, FxAdapter -> FX). Keep small
 # while paper-testing. A flat list is still accepted (applied to every adapter).

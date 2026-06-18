@@ -70,7 +70,10 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
     # daily forward cron) sees positions it already holds — otherwise the
     # correlation / max-concurrent guards would re-buy held positions each run.
     broker.seed_positions(ledger.open_trades())
-    engine = Engine(books, [EquityAdapter(), FxAdapter(), AllocationAdapter()],
+    # SIPP runs the path-A thematic basket from config (falls back to the adapter's
+    # default broad-ETF basket if unset).
+    alloc = AllocationAdapter(basket=cfg.allocation_basket or None)
+    engine = Engine(books, [EquityAdapter(), FxAdapter(), alloc],
                     broker, auditor, ledger, cfg)
     return engine, books, ledger, feed
 

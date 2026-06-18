@@ -160,9 +160,11 @@ def test_mc_cap_field_overrides_drawdown_cap():
     assert (not mc1.passed) or mc2.passed                  # wider cap is >= permissive
 
 
-def test_allocation_path_uses_60pct_positive_months_bar():
-    """Low-turnover allocation books reinterpret 'win rate' as % positive months
-    gated at 60% (not the tactical 70% trade win rate)."""
+def test_allocation_path_uses_longhorizon_profile():
+    """Path A (2026-06-18): low-turnover allocation books are judged on the
+    LONG-HORIZON profile — % positive months gated at 55%, MAR/Calmar gated, and
+    the interim realised-DD rail RETIRED (thematic equity is inherently extreme-DD,
+    so DD gating would reject the whole asset class)."""
     led = Ledger(":memory:")
     ctx = AccountContext("ibkr_sipp_equity", "SIPP", "IBKR", "U", {"EQUITY", "ETF"},
                          NullTaxPolicy(), NavPctSizing(), strategy="allocation",
@@ -170,6 +172,8 @@ def test_allocation_path_uses_60pct_positive_months_bar():
     for i in range(700):
         led.record_nav(ctx.book_id, Decimal(str(10000 + i * 5)))
     res = validate_from_ledger(ctx, led, run_robustness=False)
-    wr = next(c for c in res.criteria if c.name == "win_rate")
-    assert ">= 60%" in wr.rule
+    by = {c.name: c for c in res.criteria}
+    assert ">= 55%" in by["win_rate"].rule               # % positive months bar lowered
+    assert "mar(calmar)" in by and by["mar(calmar)"].gated is True   # MAR is the risk gate
+    assert "max_drawdown_pct" not in by                  # interim realised-DD rail retired
     led.close()

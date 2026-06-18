@@ -439,23 +439,27 @@ def validate_from_ledger(ctx, ledger, *, run_robustness: bool = True,
 
     if getattr(ctx, "strategy", "tactical") == "allocation":
         pr = periodic_returns(nav)
-        # Reuse validate_book: monthly returns ARE the "trade" series; win rate =>
-        # % positive months, PF/Sortino/expectancy from the curve, DD + MC from NAV.
-        #
-        # Buy-and-hold / pension reinterpretation of the profile (CLAUDE.md 2026-06-16):
-        #  * win rate => % POSITIVE MONTHS, gated at 60% (a strong consistency floor for
-        #    a buy-hold sleeve — the 70% TRADE win rate is a tactical concept that does
-        #    not translate to a low-turnover curve).
-        #  * REALISED max drawdown keeps the tight 5% pension rail (achieved via a low
-        #    equity weight + regime de-risk) — the headline capital-preservation number.
-        #  * MONTE-CARLO drawdown is judged at a wider 10% bound, NOT 5%. MC reshuffles
-        #    the monthly returns, which DESTROYS the regime-gating's core mechanism
-        #    (it de-risks BEFORE bad clusters in real sequence) — so MC is structurally
-        #    pessimistic for a regime-timed strategy. Still gated, just at a book-honest
-        #    cap; the realised 5% rail remains the primary risk gate.
+        # LONG-HORIZON pension profile (PATH A, CLAUDE.md 2026-06-18). The SIPP holds
+        # a high-growth ACCUMULATING THEMATIC basket (AI / data centres / critical
+        # materials / renewables) for decades, with no withdrawals. It is judged on
+        # RETURN SHAPE over the long run, NOT an interim drawdown rail:
+        #  * win rate => % POSITIVE MONTHS, gated at 55% (consistency floor; a volatile
+        #    thematic curve has more down-months than a broad index, so 60% is too strict).
+        #  * MAR / CALMAR gated at 0.30 — the long-run return must justify the drawdown.
+        #    This is the primary risk-adjusted gate (it PASSES the 2018-26 bull at 0.45
+        #    and correctly FAILS the GFC decade at -0.08).
+        #  * Realised-DD rail RETIRED (None) and the MC-DD gate DISABLED (cap 100%):
+        #    the 5% rail is unachievable for ANY growth SIPP (even 80% bonds => 14-19%
+        #    DD), and thematic equity is inherently extreme-DD, so a DD/MC gate would
+        #    just reject the whole asset class. Operator's informed choice (2026-06-18).
+        #  * Universal floor still applies: profit factor > 1 + walk-forward Sharpe > 0.
+        # ACCEPTED, DOCUMENTED RISK: pure thematic does NOT survive a GFC-scale crash
+        # even on these metrics (the lost-decade tail) — graduation rests on in-sample
+        # long-horizon metrics, with the hard operator-sign-off gate as the backstop.
         curve_profile = replace(
             profile, min_trades=ALLOCATION_MIN_PERIODS,
-            min_win_rate=0.60, mc_max_drawdown_pct=10.0)
+            min_win_rate=0.55, max_drawdown_pct=None,
+            mc_max_drawdown_pct=100.0, min_mar=0.30)
         return validate_book(
             curve_profile, pnls=pr, returns=pr, nav_curve=nav,
             book_id=ctx.book_id, run_robustness=run_robustness, seed=seed)

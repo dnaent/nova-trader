@@ -29,6 +29,7 @@ class EngineConfig:
     # asset_class -> [symbols] so each adapter scans only its own asset classes.
     universe: object = field(default_factory=list)
     aggressive_liquidation: bool = False
+    allocation_basket: list = field(default_factory=list)  # SIPP path-A thematic basket
 
     def universe_for(self, handles: set) -> list:
         """Return the symbols an adapter should scan, given its `handles` set.
@@ -56,6 +57,7 @@ def load_engine_config(path: str) -> EngineConfig:
         top_n=d.get("top_n", 10),
         universe=d.get("universe", []),
         aggressive_liquidation=d.get("aggressive_liquidation", False),
+        allocation_basket=d.get("allocation_basket", []),
     )
 
 class Engine:
