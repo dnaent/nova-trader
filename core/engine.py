@@ -327,7 +327,10 @@ class Engine:
 
                 open_symbols = [p["symbol"] for p in open_positions]
 
-                scan_universe = self.cfg.universe_for(adapter.handles)
+                # Per-book watchlist (e.g. ISA=UK, GIA=US) overrides the shared
+                # asset-class universe; falls back to config when the book has none.
+                scan_universe = ctx.universe if getattr(ctx, "universe", None) \
+                    else self.cfg.universe_for(adapter.handles)
                 scan_key = (id(adapter), tuple(scan_universe))
                 if scan_key not in scan_cache:
                     scan_cache[scan_key] = adapter.scan(scan_universe)

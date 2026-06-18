@@ -72,6 +72,35 @@ def _symbols(led, book_id):
     return {r["symbol"] for r in
             led.conn.execute("SELECT symbol FROM training_records WHERE book_id=?", (book_id,))}
 
+class _UnivEcho:
+    """Tactical adapter that proposes one Candidate per symbol it is handed, so the
+    test can see exactly which universe the engine scanned for each book."""
+    strategy = "tactical"
+    handles = {"EQUITY", "ETF"}
+    def __init__(self):
+        self._last_gate_result = {}
+    def macro_gate(self):
+        return 80.0
+    def scan(self, universe):
+        return [Candidate(s, "EQUITY", 90.0, Decimal("10"), meta={"markers": {}}) for s in universe]
+    def auditor_prompt(self, c):
+        return "x"
+
+def test_per_book_universe_overrides_config():
+    """A book's own `universe` (e.g. ISA=UK, GIA=US) is scanned instead of the shared
+    config universe; a book without one falls back to config."""
+    broker = IBKRAdapter(mode="paper", connector="stub",
+                         simulated_navs={"U_uk": 1000, "U_def": 1000})
+    broker.connect()
+    uk = _book("uk", strategy="tactical", universe=["RIO.L", "GLEN.L"])
+    default = _book("def", strategy="tactical")            # no per-book universe
+    led = Ledger(":memory:")
+    cfg = EngineConfig(universe={"EQUITY": ["SPY"]}, gate_min=40, exec_threshold=50)
+    Engine([uk, default], [_UnivEcho()], broker, StubAuditor(), led, cfg).run_cycle()
+    assert _symbols(led, "uk") == {"RIO.L", "GLEN.L"}      # scanned its own UK watchlist
+    assert _symbols(led, "def") == {"SPY"}                 # fell back to the config universe
+    led.close()
+
 def test_engine_routes_each_book_to_its_strategy():
     broker = IBKRAdapter(mode="paper", connector="stub",
                          simulated_navs={"U_t": 1000, "U_a": 1000})

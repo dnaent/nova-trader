@@ -18,6 +18,16 @@ books:
     gate_min: 80                  # VALIDATED 2026-06-16: 8y-daily honest mark-to-market
                                   # PASS (win 70.7%, Sortino 1.123 robust, DD 7.6% < 18%).
                                   # gate 80 (not 78) is what firms Sortino above 1.0.
+    # ISA "Aeroplane" — UK/FTSE growth universe: PENDING OPERATOR DECISION (2026-06-18).
+    # The modernized UK-growth watchlist (best-12m FTSE miners/thematic + DD-vetted recs)
+    # is gross-profitable (PF 2.9, win 55%, DD<18%) but FAILS the ISA Sortino>=1.0 bar
+    # in-sample (0.60-0.70): UK miners are inherently choppy (downside-deviation heavy),
+    # and adding broad/quality diversifiers made it WORSE (more scanner trades, not less
+    # vol). GIA (US tech) passes Sortino 1.33 only because US tech ran smoother — so this
+    # is a mandate question (is Sortino>=1.0 right for a deliberately-cyclical UK growth
+    # book?), NOT a bug. Proposed universe preserved in research/ + the morning report;
+    # NOT applied until the operator decides (relax ISA Sortino vs broad-tilt vs keep).
+    # Until then ISA falls back to the config.yaml EQUITY universe (validated: Sortino 1.065).
     sizing:
       type: atr_sizing            # CANONICAL 2026-06-18: risk-based (vol-throttled) sizing.
                                   # Replaces flat nav_pct. HALVED the GFC out-of-sample
@@ -49,14 +59,16 @@ books:
     ibkr_account_id: "U_SIPP_PLACEHOLDER"
     allowed_assets: ["EQUITY", "ETF"]   # long-term ETFs preferred
     tax_policy: null
-    # SIPP = PATH A (2026-06-18): low-turnover allocation holding an EQUAL-WEIGHT
-    # ACCUMULATING THEMATIC basket (AI/tech infra, data centres, critical materials,
-    # renewables — see config.yaml `allocation_basket`) for decades, regime-de-risked.
-    # Judged on LONG-HORIZON metrics (CAGR/MAR/% positive months), NOT a 5% interim-DD
-    # rail (which is unachievable for any growth SIPP; see validation.py allocation
-    # profile). ACCEPTED, DOCUMENTED RISK: pure thematic does not survive a GFC-scale
-    # crash even on long-horizon metrics (the lost-decade tail) — operator's informed
-    # choice; the hard live-authorization gate (operator sign-off) is the backstop.
+    # SIPP = ENRICHED "PENSION FORTRESS" (2026-06-18): low-turnover allocation holding an
+    # EQUAL-WEIGHT DIVERSIFIED basket — a defensive CORE (physical gold + global all-world
+    # + income trusts) plus THEMATIC SATELLITES (AI, data centres, critical materials,
+    # clean energy, semis, uranium, robotics) — see config.yaml `allocation_basket`.
+    # Enriched from pure path-A thematic toward the operator's own diversified concept,
+    # which the GFC frontier showed is far more robust (the gold/global/income core breaks
+    # the pure-thematic lost-decade tail). Judged on LONG-HORIZON metrics (CAGR/MAR/%
+    # positive months), NOT a 5% interim-DD rail (unachievable for any growth SIPP; see
+    # validation.py allocation profile). Regime-de-risked; the hard live-authorization
+    # gate (operator sign-off) remains the backstop. Still PAPER-ONLY.
     strategy: allocation
     gate_min: 75                  # per-book ENTRY floor: only buy in strong regimes
     aggressive_liquidation: true  # regime de-risk to cash
@@ -69,7 +81,7 @@ books:
                                   # equal-weight thematic basket is held in full.
     sizing:
       type: nav_pct
-      max_per_position_pct: 25    # equal-weight: 4 themes x 25% = ~100% invested while
+      max_per_position_pct: 8     # equal-weight: ~12 holdings x ~8% = ~100% invested while
                                   # the regime is favourable (de-risk moves to cash when not)
       leverage: 1.0
       unit: shares
@@ -93,6 +105,21 @@ books:
     # MANDATE (see validation.py GIA profile, now = ISA's). Tax efficiency is a separate
     # realization-timing overlay (defer CGT, harvest losses vs the £3k AEA, low turnover),
     # not a tighter risk profile. Risk-based ATR sizing halved GIA's GFC MC tail (17.8->8.9%).
+    # GIA "Rocket Ship" — US high-beta growth watchlist (modernized 2026-06-18 from the
+    # operator's GIA matrix concept; best trailing-12m performers + DD-vetted recs; deep
+    # laggards (SMR -70%, COIN -45%, CRWV -31%, TMC -24%) dropped). US-listed (its own book).
+    universe:
+      - IREN     # IREN (AI compute)         +508%/12m  [matrix]
+      - CRML     # Critical Metals Corp      +364%      [matrix]
+      - MU       # Micron (AI memory)        +836%      [recommendation]
+      - VRT      # Vertiv (data-centre power)+181%      [recommendation]
+      - ASML     # ASML (litho)              +156%      [matrix]
+      - GEV      # GE Vernova (power)        +128%      [recommendation]
+      - TSM      # TSMC (foundry)            +120%      [matrix]
+      - ANET     # Arista (AI networking)     +89%      [recommendation]
+      - 3LNV.L   # GraniteShares 3x NVDA      +77%      [matrix: max aggression]
+      - AVGO     # Broadcom (AI silicon)      +66%      [recommendation]
+      - NVDA     # Nvidia (AI)                +46%      [recommendation]
     sizing:
       type: atr_sizing
       risk_pct: 0.35

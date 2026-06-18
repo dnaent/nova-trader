@@ -111,6 +111,8 @@ class AccountContext:
     aggressive_liquidation: bool = False  # de-risk to cash when gate falls below the de-risk floor
     derisk_gate: Optional[float] = None  # gate floor for EXITS (hysteresis); None -> use gate_min.
                                          # Set below gate_min to hold through minor dips (anti-whipsaw).
+    universe: Optional[list] = None      # per-book scan watchlist (e.g. ISA=UK, GIA=US). None ->
+                                         # fall back to the engine's asset-class universe (config.yaml).
 
 # --------------------------------------------------------------------------- #
 # Manifest loader (portfolio.yaml -> list[AccountContext])
@@ -180,5 +182,6 @@ def load_books(manifest_path: str) -> list[AccountContext]:
             gate_min=b.get("gate_min"),
             aggressive_liquidation=b.get("aggressive_liquidation", False),
             derisk_gate=b.get("derisk_gate"),
+            universe=b.get("universe"),
         ))
     return books
