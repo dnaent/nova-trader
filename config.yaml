@@ -8,32 +8,15 @@ exec_threshold: 35     # blended (0.60 quant + 0.40 claude) score required to ac
                        # blended scores top out ~52 (mean ~29) — 75 is unreachable, so
                        # every validated 8y replay used 35. The regime gate, not this
                        # threshold, is what concentrates trades into good regimes.
-top_n: 10              # max candidates considered per book per cycle
+top_n: 15              # max candidates per book per cycle (>= the largest allocation
+                       # basket so a full diversified book is held, not truncated)
 
-# SIPP allocation basket — ENRICHED "PENSION FORTRESS" (2026-06-18): equal-weight
-# DIVERSIFIED long-horizon pension. A defensive CORE (physical gold + global all-world +
-# income trusts) anchors high-growth THEMATIC SATELLITES (all accumulating where an Acc
-# class exists). Enriched from pure path-A thematic toward the operator's own diversified
-# concept — the GFC frontier showed the gold/global/income core breaks the pure-thematic
-# lost-decade tail. NOTE: most thematic funds are 2019-2022 inceptions, so HISTORICAL
-# REPLAY/validation uses long-history PROXIES (gold→GLD, global→SPY, income→AGG,
-# AI/semis→QQQ, materials→XME, clean energy→PBW); this list is the LIVE/forward basket.
-# The SIPP book raises max_correlation so the full basket is held (not de-duplicated).
-allocation_basket:
-  # --- defensive core (gold + global + income) ---
-  - IGLG.L   # iShares Physical Gold (GBP)            crisis diversifier   [proxy GLD]
-  - VWRP.L   # Vanguard FTSE All-World (Acc)          global core          [proxy SPY]
-  - BRWM.L   # BlackRock World Mining Trust           royalty/income       [proxy XME]
-  - IUKD.L   # iShares UK Dividend                    equity income        [proxy SPY]
-  - GCP.L    # GCP Infrastructure Investments         infra-debt income    [proxy AGG]
-  # --- thematic satellites ---
-  - AIAG.L   # L&G Artificial Intelligence (Acc)      AI                   [proxy QQQ]
-  - VPNG.L   # Global X Data Center REITs (Acc)       data centres         [proxy VNQ]
-  - REGB.L   # VanEck Rare Earth & Strategic Metals   critical materials   [proxy XME]
-  - INRA.L   # iShares Global Clean Energy (Acc)      renewables           [proxy PBW]
-  - SMGB.L   # L&G US Semiconductors                  semis                [proxy QQQ]
-  - URNP.L   # Sprott Uranium Miners                  nuclear              [proxy XME]
-  - ROBG.L   # L&G ROBO Global Robotics               robotics             [proxy QQQ]
+# Allocation BASKETS are now PER-BOOK (portfolio.yaml `universe:` on each allocation
+# book) — ISA runs a growth-tilted basket, SIPP a diversified "Pension Fortress" — so a
+# single shared list no longer fits. `allocation_basket` below is only an ultimate
+# fallback for an allocation book that declares no per-book universe (none currently do).
+# Backtest/validation injects long-history PROXIES for the young Acc funds.
+allocation_basket: []
 
 # Universe scanned each cycle, keyed by asset class so each adapter only scans
 # symbols it handles (EquityAdapter -> EQUITY/ETF, FxAdapter -> FX). Keep small

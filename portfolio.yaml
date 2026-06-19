@@ -15,33 +15,40 @@ books:
     ibkr_account_id: "U_ISA_PLACEHOLDER"
     allowed_assets: ["EQUITY", "ETF"]
     tax_policy: null
-    gate_min: 80                  # VALIDATED 2026-06-16: 8y-daily honest mark-to-market
-                                  # PASS (win 70.7%, Sortino 1.123 robust, DD 7.6% < 18%).
-                                  # gate 80 (not 78) is what firms Sortino above 1.0.
-    # ISA "Aeroplane" — UK/FTSE growth universe: PENDING OPERATOR DECISION (2026-06-18).
-    # The modernized UK-growth watchlist (best-12m FTSE miners/thematic + DD-vetted recs)
-    # is gross-profitable (PF 2.9, win 55%, DD<18%) but FAILS the ISA Sortino>=1.0 bar
-    # in-sample (0.60-0.70): UK miners are inherently choppy (downside-deviation heavy),
-    # and adding broad/quality diversifiers made it WORSE (more scanner trades, not less
-    # vol). GIA (US tech) passes Sortino 1.33 only because US tech ran smoother — so this
-    # is a mandate question (is Sortino>=1.0 right for a deliberately-cyclical UK growth
-    # book?), NOT a bug. Proposed universe preserved in research/ + the morning report;
-    # NOT applied until the operator decides (relax ISA Sortino vs broad-tilt vs keep).
-    # Until then ISA falls back to the config.yaml EQUITY universe (validated: Sortino 1.065).
+    # ISA "Aeroplane" = GROWTH ALLOCATION (option (d), 2026-06-19, operator-approved).
+    # CHANGED from the tactical ML scanner to a low-turnover, regime-gated, DIVERSIFIED
+    # GROWTH allocation — the only structure that is consistently stable AND profitable
+    # across regimes. Rationale: the tactical scanner's quant_score has ~no edge (the
+    # regime gate carried it) and its churn produced a low-Sortino lumpy curve that
+    # diversifiers couldn't fix; an allocation book (curve-validated on MAR / % positive
+    # months) is stabler and, growth-tilted, MORE profitable (in-sample MAR 0.64 vs the
+    # SIPP's 0.56) while surviving the GFC positively (MAR 0.156, 60% positive months —
+    # no lost decade). Tax-free wrapper => can run hotter (growth-tilted) than the SIPP.
+    strategy: allocation
+    gate_min: 75                  # validated allocation entry floor (as SIPP)
+    aggressive_liquidation: true  # regime de-risk to cash
+    derisk_gate: 65               # EXIT floor (hysteresis), anti-whipsaw
+    # Per-book GROWTH BASKET: growth core/satellites + a gold crash-diversifier + a
+    # global ballast. UK-listed (Acc where available). Backtest proxies in [..].
+    universe:
+      - SMGB.L   # L&G US Semiconductors                  semis (+181%/12m)    [proxy SOXX]
+      - REGB.L   # VanEck Rare Earth & Strategic Metals   critical materials   [proxy XME]
+      - VPNG.L   # Global X Data Center REITs (Acc)        data centres (+81%)  [proxy QQQ]
+      - AIAG.L   # L&G Artificial Intelligence (Acc)       AI (+73%)            [proxy QQQ]
+      - INRA.L   # iShares Global Clean Energy (Acc)       renewables (+68%)    [proxy PBW]
+      - ROBG.L   # L&G ROBO Global Robotics                robotics (+54%)      [proxy QQQ]
+      - VWRP.L   # Vanguard FTSE All-World (Acc)           global ballast       [proxy SPY]
+      - SGLN.L   # iShares Physical Gold                   crash diversifier    [proxy GLD]
+    guardrails:
+      max_correlation: 0.99       # hold the full growth basket (don't de-duplicate)
     sizing:
-      type: atr_sizing            # CANONICAL 2026-06-18: risk-based (vol-throttled) sizing.
-                                  # Replaces flat nav_pct. HALVED the GFC out-of-sample
-                                  # Monte-Carlo tail (MC 18.3%->8.5%) with ZERO in-sample
-                                  # regression — ATR stops widen in a crash so size auto-shrinks
-                                  # (constant per-trade risk). Only residual GFC failure is the
-                                  # size-invariant Sortino (~0.71), the strategy's 2008 shape.
-      risk_pct: 0.35              # per-trade risk = 0.35% of NAV (~matches old nav_pct effective
-                                  # risk: 8% position x 5% stop; now with the vol-throttle)
-      leverage: 0.35              # REUSED as a per-position NOTIONAL CAP (notional <= NAV*0.35)
-                                  # to bound single-name concentration — NOT margin.
+      type: nav_pct
+      max_per_position_pct: 12    # equal-weight: ~8 holdings x ~12% = ~100% invested
+      leverage: 1.0
       unit: shares
-      stop_atr_multiplier: 2.0
-      take_atr_multiplier: 4.0    # 2:1 reward:risk
+      stop_pct: 0.30              # wide: exits are regime-driven, not stop-driven
+      take_pct: 10.0              # effectively no take-profit (hold/compound)
+      trailing_pct: 0.30
 
   # SIPP — NOTE: IBKR is NOT a direct SIPP provider. At go-live this account is
   # opened by a third-party UK SIPP administrator/trustee that permits an IBKR
@@ -74,8 +81,25 @@ books:
     aggressive_liquidation: true  # regime de-risk to cash
     derisk_gate: 65               # EXIT floor (hysteresis): hold through dips 65-75,
                                   # only sell on genuine deterioration (anti-whipsaw)
+    # Per-book allocation BASKET (the enriched diversified "Pension Fortress"):
+    # gold/global/income core + thematic satellites. Held in full (max_correlation 0.99).
+    # All accumulating where an Acc class exists. Backtest uses long-history proxies
+    # (gold->GLD, global->SPY, income->AGG, AI/semis->QQQ, materials->XME, clean->PBW).
+    universe:
+      - IGLG.L   # iShares Physical Gold (GBP)            crisis diversifier   [proxy GLD]
+      - VWRP.L   # Vanguard FTSE All-World (Acc)          global core          [proxy SPY]
+      - BRWM.L   # BlackRock World Mining Trust           royalty/income       [proxy XME]
+      - IUKD.L   # iShares UK Dividend                    equity income        [proxy SPY]
+      - GCP.L    # GCP Infrastructure                     infra-debt income    [proxy AGG]
+      - AIAG.L   # L&G Artificial Intelligence (Acc)      AI                   [proxy QQQ]
+      - VPNG.L   # Global X Data Center REITs (Acc)       data centres         [proxy VNQ]
+      - REGB.L   # VanEck Rare Earth & Strategic Metals   critical materials   [proxy XME]
+      - INRA.L   # iShares Global Clean Energy (Acc)      renewables           [proxy PBW]
+      - SMGB.L   # L&G US Semiconductors                  semis                [proxy QQQ]
+      - URNP.L   # Sprott Uranium Miners                  nuclear              [proxy XME]
+      - ROBG.L   # L&G ROBO Global Robotics               robotics             [proxy QQQ]
     guardrails:
-      max_correlation: 0.99       # HOLD ALL FOUR themes: the deliberately-chosen basket
+      max_correlation: 0.99       # HOLD the whole basket: the deliberately-chosen basket
                                   # is correlated; the default 0.8 corr guard would
                                   # de-duplicate it to a single holding. Raised so the
                                   # equal-weight thematic basket is held in full.

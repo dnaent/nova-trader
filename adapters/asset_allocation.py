@@ -48,13 +48,17 @@ class AllocationAdapter:
         return self._last_gate_result.get("gate_score", 50.0)
 
     def scan(self, universe: Iterable[str]) -> list:
-        """Propose holding the core basket (high conviction) at the point-in-time
-        price. `universe` is ignored — the pension core is a fixed basket, not the
-        tactical scan list. The engine's correlation guardrail prevents re-buying
-        anything already held, giving low turnover for free.
+        """Propose holding the basket (high conviction) at the point-in-time price.
+
+        The basket is the book's PER-BOOK `universe` (passed in by the engine) when
+        set — this lets distinct allocation books hold different baskets (e.g. an
+        aggressive growth ISA vs a diversified SIPP) through one shared adapter. Falls
+        back to the adapter's construction basket when the book has none. The engine's
+        correlation guardrail prevents re-buying anything already held (low turnover).
         """
+        basket = list(universe) if universe else self.basket
         out = []
-        for sym in self.basket:
+        for sym in basket:
             px = get_latest_price(sym)
             if px is None or px <= 0:
                 continue

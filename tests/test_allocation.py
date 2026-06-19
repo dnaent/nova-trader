@@ -21,11 +21,15 @@ def test_allocation_adapter_basics():
 
 def test_allocation_scan_uses_point_in_time_price(monkeypatch):
     monkeypatch.setattr("adapters.asset_allocation.get_latest_price", lambda s: Decimal("132.5"))
-    cands = AllocationAdapter(basket=["VWRL.L"]).scan(["ignored", "universe"])
-    assert len(cands) == 1
-    assert cands[0].symbol == "VWRL.L"
+    # scan holds the PER-BOOK basket the engine passes (ctx.universe), enabling distinct
+    # allocation books (growth ISA vs diversified SIPP) through one shared adapter.
+    cands = AllocationAdapter(basket=["FALLBACK"]).scan(["VWRL.L", "IGLG.L"])
+    assert {c.symbol for c in cands} == {"VWRL.L", "IGLG.L"}
     assert cands[0].price == Decimal("132.5")
     assert cands[0].quant_score == 100.0            # high-conviction hold
+    # falls back to the construction basket when the book declares no universe
+    fb = AllocationAdapter(basket=["VWRL.L"]).scan([])
+    assert [c.symbol for c in fb] == ["VWRL.L"]
 
 def test_allocation_scan_skips_missing_price(monkeypatch):
     monkeypatch.setattr("adapters.asset_allocation.get_latest_price", lambda s: None)
@@ -41,10 +45,13 @@ def test_sipp_book_uses_allocation():
     assert sipp.strategy == "allocation"
     assert sipp.gate_min == 75
     assert sipp.aggressive_liquidation is True
-    # tactical books stay tactical; ISA/GIA carry their VALIDATED per-book gates
-    assert books["ibkr_isa_equity"].strategy == "tactical"
-    assert books["ibkr_isa_equity"].gate_min == 80
-    assert books["ibkr_gia_equity"].gate_min == 80   # mirrors ISA (2026-06-18)
+    assert len(sipp.universe) == 12                   # per-book diversified basket
+    # ISA is now a GROWTH ALLOCATION book (option d, 2026-06-19); GIA stays tactical.
+    assert books["ibkr_isa_equity"].strategy == "allocation"
+    assert books["ibkr_isa_equity"].gate_min == 75
+    assert len(books["ibkr_isa_equity"].universe) == 8   # per-book growth basket
+    assert books["ibkr_gia_equity"].strategy == "tactical"
+    assert books["ibkr_gia_equity"].gate_min == 80
 
 
 # --------------------------------------------------------------------------- #
