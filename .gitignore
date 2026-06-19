@@ -65,3 +65,5 @@ nova_ledger.db
 .coverage.*
 htmlcov/
 .pytest_cache/
+# Generated training corpora (regenerable, can be large)
+*.jsonl
