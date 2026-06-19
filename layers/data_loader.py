@@ -242,7 +242,16 @@ def get_technical_features(symbol: str, lookback_days: int = 730) -> pd.DataFram
         df.ta.adx(append=True)
         # Ichimoku can return tuple, use direct append safely
         df.ta.ichimoku(append=True)
-        
+
+        # BUGFIX (2026-06-19): pandas-ta appends the chikou span ICS_* = close.shift(-N)
+        # — a FUTURE close. Two problems: (a) LOOKAHEAD if used as a feature, and worse
+        # (b) its trailing NaNs make the dropna() below drop the most RECENT N (~26) rows,
+        # silently feeding the scanner ~26-day-STALE features (raw ended 2026-06-18 but the
+        # feature frame ended 2026-05-12). Drop the chikou BEFORE dropna so features stay
+        # current; the other Ichimoku lines (tenkan/kijun/senkou) are past-derived and kept.
+        df = df.drop(columns=[c for c in df.columns if c.upper().startswith("ICS")],
+                     errors="ignore")
+
         # Clean up NaNs from lookback periods
         df = df.dropna()
         return df
