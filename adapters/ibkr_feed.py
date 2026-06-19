@@ -173,6 +173,39 @@ class IBKRDataFeed:
             log.debug("get_daily_bars(%s) failed: %s", symbol, e)
             return pd.DataFrame()
 
+    def get_intraday_bars(self, symbol: str, bar_size: str = "1 hour",
+                          lookback_days: int = 5, use_rth: bool = False) -> pd.DataFrame:
+        """Intraday OHLCV bars (yfinance-compatible columns, FULL datetime index).
+
+        For the Phase-1 temporal-feature layer (FX time-of-day / session study). FX
+        uses MIDPOINT and 24h coverage (useRTH=False). Empty frame on any failure so
+        callers fall back without try/except. Intraday history is bounded by IBKR
+        (hours/finer => fewer days) — this is a recent-window feed, not deep history."""
+        if not self._ensure_connected():
+            return pd.DataFrame()
+        try:
+            from ib_async import util
+            contract = self._contract(symbol)
+            if contract is None or not self._ib.qualifyContracts(contract):
+                return pd.DataFrame()
+            what = "MIDPOINT" if _is_fx(symbol) else "TRADES"
+            bars = self._ib.reqHistoricalData(
+                contract, endDateTime="", durationStr=f"{max(1, lookback_days)} D",
+                barSizeSetting=bar_size, whatToShow=what, useRTH=use_rth, formatDate=1)
+            if not bars:
+                return pd.DataFrame()
+            df = util.df(bars)
+            if df is None or df.empty:
+                return pd.DataFrame()
+            df = df.rename(columns={"open": "Open", "high": "High", "low": "Low",
+                                    "close": "Close", "volume": "Volume"})
+            df["Datetime"] = pd.to_datetime(df["date"])     # keep intraday time, not just date
+            df = df.set_index("Datetime")
+            return df[["Open", "High", "Low", "Close", "Volume"]]
+        except Exception as e:
+            log.debug("get_intraday_bars(%s) failed: %s", symbol, e)
+            return pd.DataFrame()
+
 
 # =========================================================================== #
 # Quick connectivity check

@@ -5,7 +5,7 @@ import json
 
 from core.context import Candidate
 from layers.data_loader import (get_daily_data, get_technical_features,
-                                get_recent_news, format_markers)
+                                get_recent_news, format_markers, temporal_fx_features)
 
 # Tunables for the FX trend strategy (deterministic, point-in-time).
 ADX_MIN = 20.0          # below this the pair is ranging -> no trend trade. (ADX 23 +
@@ -105,6 +105,10 @@ class FxAdapter:
         quant_score = float(min(95.0, max(60.0, 40.0 + adx)))
         markers = {col: round(float(df.iloc[-1][col]), 6)
                    for col in df.columns if col not in EXCLUDE_COLS}
+        # Phase-1 OBSERVE-ONLY temporal features (session/day/intraday-vol). Logged into
+        # the marker snapshot for the corpus; does NOT affect side/score/sizing/exits.
+        # Returns {} during replay (no point-in-time intraday) so the daily corpus is unchanged.
+        markers.update(temporal_fx_features(symbol))
         return Candidate(
             symbol=symbol, asset_class=self.asset_class, quant_score=quant_score,
             price=Decimal(str(round(float(close), 6))), side=side,

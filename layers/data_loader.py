@@ -82,6 +82,83 @@ def get_daily_data(symbol: str, lookback_days: int = 365, use_cache: bool = True
         df.to_csv(cache_path)
     return df
 
+def _fx_session_code(hour_utc) -> float:
+    """Map a UTC hour to an FX session bucket (numeric, for the marker matrix):
+    1=Asia, 2=London, 3=London/NY overlap (peak liquidity), 4=NY, 5=off-hours."""
+    h = int(hour_utc) % 24
+    if 0 <= h < 7:   return 1.0    # Asia
+    if 7 <= h < 12:  return 2.0    # London
+    if 12 <= h < 16: return 3.0    # London/NY overlap (peak)
+    if 16 <= h < 21: return 4.0    # NY
+    return 5.0                     # 21-24 off-hours
+
+
+def get_intraday_data(symbol: str, interval: str = "1h", lookback_days: int = 5) -> pd.DataFrame:
+    """Intraday OHLCV bars for the temporal-feature layer (Phase 1, FX observe-only).
+
+    Routing (replay-safe): a registered feed WITH `get_intraday_bars` (the live
+    IBKRDataFeed) is primary; a feed WITHOUT it (the replay ReplayFeed) returns an
+    EMPTY frame by design — there is no point-in-time intraday history in replay, so
+    we skip it (no lookahead; the daily corpus is unaffected). With no feed (dev) we
+    use the yfinance intraday fallback. Empty frame on any failure.
+    """
+    feed = _PRICE_FEED
+    if feed is not None and getattr(feed, "get_intraday_bars", None) is None:
+        return pd.DataFrame()                      # ReplayFeed etc.: no intraday in replay
+    if feed is not None:
+        try:
+            if feed.is_connected():
+                df = feed.get_intraday_bars(symbol, lookback_days=lookback_days)
+                if df is not None and not df.empty:
+                    return df
+        except Exception:
+            pass
+    try:
+        df = yf.Ticker(symbol).history(period=f"{lookback_days}d", interval=interval)
+        return df if (df is not None and not df.empty) else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
+def temporal_fx_features(symbol: str) -> dict:
+    """Phase-1 OBSERVE-ONLY temporal features for FX, from recent intraday bars.
+
+    Merged into the FX marker snapshot (training records + Inference Context Bundle)
+    WITHOUT affecting the daily signal/sizing/exits. Returns {} when intraday data is
+    unavailable (e.g. historical replay) so the daily corpus is unchanged — derived
+    from the latest bar's timestamp (point-in-time), never wall-clock now().
+
+    HONEST NOTE: with DAILY execution the entry hour/session is ~constant (cron time),
+    so the *varying* useful observe signals are day-of-week (the 'specific days' half of
+    the idea) + intraday volatility/return context. The intraday ENTRY-timing edge ('a
+    certain time window') needs Phase 3 (intraday cadence). This phase just makes the
+    model SEE time, and lets the corpus reveal whether the edge is there.
+    """
+    df = get_intraday_data(symbol, interval="1h", lookback_days=5)
+    if df is None or df.empty or "Close" not in df.columns or len(df) < 2:
+        return {}
+    try:
+        ts = df.index[-1]
+        if getattr(ts, "tzinfo", None) is not None:
+            ts = ts.tz_convert("UTC")
+        out = {
+            "fx_dow": float(ts.dayofweek),          # 0=Mon .. 6=Sun (decision day)
+            "fx_hour_utc": float(ts.hour),
+            "fx_session": _fx_session_code(ts.hour),
+        }
+        close = df["Close"].astype(float)
+        last = float(close.iloc[-1])
+        if last:
+            hi = float(df["High"].astype(float).tail(24).max())
+            lo = float(df["Low"].astype(float).tail(24).min())
+            first = float(close.tail(24).iloc[0])
+            out["fx_range_24h_pct"] = round((hi - lo) / last * 100.0, 4)
+            out["fx_ret_24h_pct"] = round((last / first - 1.0) * 100.0, 4) if first else 0.0
+        return out
+    except Exception:
+        return {}
+
+
 def format_markers(markers: dict) -> str:
     """Render a marker snapshot for the LLM Inference Context Bundle (Layer 3).
 
