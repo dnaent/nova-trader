@@ -176,6 +176,51 @@ def run_enriched(label, start, end, proxies, db, step=1):
     led.close()
 
 
+class _FxTsmom:
+    """Forex re-think: TIME-SERIES MOMENTUM (TSMOM) — the canonical managed-futures FX
+    edge. Long if the pair's trailing ~12-month return is positive, short if negative
+    (sized by ATR via the book's sizing). Uses ONLY price (get_daily_data) — never the
+    marker pipeline that the failed EMA/ADX trend used. Permissive gate (TSMOM is an
+    always-positioned momentum strategy)."""
+    asset_class = "FX"; handles = {"FX"}; strategy = "tactical"
+    def __init__(self, lookback=252, min_abs=0.0, gate=60.0):
+        self.lookback = lookback; self.min_abs = min_abs; self.gate = gate
+        self._last_gate_result = {}
+    def macro_gate(self):
+        self._last_gate_result = {"regime": "tsmom", "gate_score": self.gate}
+        return self.gate
+    def scan(self, universe):
+        from decimal import Decimal as D
+        from layers.data_loader import get_daily_data
+        out = []
+        for sym in universe:
+            df = get_daily_data(sym, lookback_days=self.lookback + 40)
+            if df is None or df.empty or "Close" not in df.columns or len(df) < self.lookback + 2:
+                continue
+            close = df["Close"].astype(float)
+            r = close.iloc[-1] / close.iloc[-self.lookback] - 1.0
+            if abs(r) < self.min_abs:
+                continue
+            side = "BUY" if r > 0 else "SELL"
+            score = float(min(95.0, max(60.0, 60.0 + abs(r) * 200.0)))
+            out.append(Candidate(sym, "FX", score, D(str(round(float(close.iloc[-1]), 6))),
+                                 side=side, meta={"markers": {}, "r12": round(float(r), 4)}))
+        out.sort(key=lambda x: x.quant_score, reverse=True)
+        return out
+    def auditor_prompt(self, c):
+        return f"tsmom {c.symbol}"
+
+
+def run_fx(label, start, end, adapter, db, step=1):
+    """Backtest an FX adapter on the ibkr_forex_margin book (account-level FOREX profile)."""
+    print(f"\n########## {label}: {start}->{end} ##########", flush=True)
+    books = load_books("portfolio.yaml")
+    fx = next(b for b in books if b.book_id == "ibkr_forex_margin")
+    led = run_replay(pd.Timestamp(start), pd.Timestamp(end), db_path=_fresh(db), step_days=step,
+                     exec_threshold=EXEC, adapters=[adapter], books=[fx], do_report=True)
+    led.close()
+
+
 def run_alloc(book_id, label, start, end, proxies, db, step=1):
     """Validate ANY allocation book with long-history PROXIES, injected as its PER-BOOK
     universe (the engine passes ctx.universe to the adapter — passing basket= to the
@@ -295,6 +340,10 @@ if __name__ == "__main__":
         g = ["SPY", "QQQ", "SOXX", "XME", "GLD"]
         run_alloc("ibkr_isa_equity", "ISA_ALLOC_GFC", "2007-01-03", "2018-01-02", g, "nova_isaalloc_gfc.db")
         run_alloc("ibkr_isa_equity", "ISA_ALLOC_INS", "2018-01-02", "2026-06-01", g, "nova_isaalloc_ins.db")
+    elif mode == "fx_tsmom":
+        # Forex re-think: 12-month time-series momentum vs the failed EMA/ADX trend.
+        run_fx("FX_TSMOM_GFC", "2007-01-03", "2018-01-02", _FxTsmom(), "nova_fxtsmom_gfc.db")
+        run_fx("FX_TSMOM_INS", "2018-01-02", "2026-06-01", _FxTsmom(), "nova_fxtsmom_ins.db")
     elif mode == "gia_alloc":
         # GIA reworked to aggressive US-growth allocation: validate via proxies (current,
         # leakage-free features post-bugfix). Aggressive US growth + gold crash-diversifier.
