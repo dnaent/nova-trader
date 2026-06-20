@@ -305,13 +305,16 @@ if __name__ == "__main__":
             run_hybrid(f"HYB_{tag}_GFC", "2007-01-03", "2018-01-02", w, f"nova_hyb_{tag}_gfc.db")
             run_hybrid(f"HYB_{tag}_INS", "2018-01-02", "2026-06-01", w, f"nova_hyb_{tag}_ins.db")
     elif mode == "corpus":
-        # STEP 2: generate a deep, regime-diverse parent training corpus across all 4
-        # books on the finalized config (2007-2026: GFC + COVID + bull/bear). Allocation
-        # books use long-history PROXIES for the young Acc funds (regime depth); GIA trades
-        # its real US names; Forex its pairs. Layer 3 = NeutralAuditor (too slow live for
-        # thousands of cycles; the live cron adds real Ollama audits). Then export JSONL.
+        # REGENERATED 2026-06-20 on CORRECTED features + the new config: all 3 equity books
+        # are ALLOCATION (ISA/SIPP/GIA); Forex is PARKED (no daily edge) so it's EXCLUDED.
+        # Allocation books use long-history PROXIES for the young live tickers (regime depth,
+        # 2007-2026: GFC + COVID + bull/bear). Layer 3 = NeutralAuditor (the live cron adds
+        # real Ollama audits). Then export JSONL. NOTE: the corpus is now an ALLOCATION /
+        # regime-timed decision dataset (the bug-inflated tactical GIA scanner is retired),
+        # so it's cleaner but sparser than the old 26.5k (which was 94% GIA scanner records).
         isa_px = ["SPY", "QQQ", "SOXX", "XME", "GLD"]           # ISA growth-allocation proxies
         sipp_px = ["GLD", "SPY", "AGG", "QQQ", "XME", "PBW"]    # SIPP diversified proxies
+        gia_px = ["QQQ", "SOXX", "SPY", "GLD"]                  # GIA aggressive US-growth proxies
         books = load_books("portfolio.yaml")
         out = []
         for b in books:
@@ -319,12 +322,15 @@ if __name__ == "__main__":
                 out.append(dataclasses.replace(b, universe=isa_px))
             elif b.book_id == "ibkr_sipp_equity":
                 out.append(dataclasses.replace(b, universe=sipp_px))
+            elif b.book_id == "ibkr_gia_equity":
+                out.append(dataclasses.replace(b, universe=gia_px))
+            elif b.book_id == "ibkr_forex_margin":
+                continue                                        # PARKED — excluded from the corpus
             else:
                 out.append(b)
         led = run_replay(pd.Timestamp("2007-01-03"), pd.Timestamp("2026-06-01"),
                          db_path=_fresh("nova_corpus.db"), step_days=1, exec_threshold=EXEC,
-                         adapters=[EquityAdapter(), FxAdapter(), AllocationAdapter()],
-                         books=out, do_report=True)
+                         adapters=[AllocationAdapter()], books=out, do_report=True)
         n = led.export_training_jsonl("nova_training_corpus.jsonl")
         print(f"\n>>> CORPUS exported: {n} records -> nova_training_corpus.jsonl")
         for b in out:

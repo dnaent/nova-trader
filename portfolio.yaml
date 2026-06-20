@@ -171,6 +171,13 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false              # set true if a higher-rate taxpayer
+    # PARKED 2026-06-20: no validated DAILY edge. The staleness/lookahead bugfix
+    # de-validated the EMA/ADX trend (PF 2.35->1.2), and a TSMOM re-think also failed
+    # (PF 0.97-1.15) — the USD majors have no reliable daily signal for us. FX's real
+    # opportunity is INTRADAY (session/time-of-day) — see research/INTRADAY_FX_TIMING_SCOPE.md
+    # (the merged Phase 2/3 sprint is the next FX workstream). gate_min 999 = unreachable
+    # ⇒ the book never opens new entries (parked) until the intraday strategy replaces this.
+    gate_min: 999                     # PARKED (unreachable gate) — no validated daily edge
     sizing:
       type: atr_sizing
       risk_pct: 1.0                   # per-trade risk (reduced to 1% to bring the trend
