@@ -13,6 +13,8 @@ layer for watching the out-of-sample track record mature.
 
 Endpoints (all GET, JSON):
     /api/health                      -> {status, ts, db}
+    /api/status                      -> operational health: last-cycle freshness,
+                                        forward.log recency, TWS + Ollama reachability
     /api/summary                     -> per-book overview (nav, strategy, gate, positions,
                                         closed, win_rate, validation verdict)
     /api/trades?book=<id>&limit=50   -> recent trades (TradeRecord[]-shaped)
@@ -22,6 +24,7 @@ Endpoints (all GET, JSON):
 
 Run:  python -m ui.dashboard_api            (serves http://127.0.0.1:8000)
       NOVA_LEDGER_DB=nova_ledger.db NOVA_API_PORT=8000 python -m ui.dashboard_api
+      python -m ui.dashboard_api --status   (one-shot health check, no server; exit 0=healthy)
 """
 from __future__ import annotations
 
@@ -48,6 +51,75 @@ def _books():
 def _ledger() -> Ledger:
     # A fresh read connection per request keeps it simple + thread-safe (read-only).
     return Ledger(DB_PATH)
+
+
+# --------------------------------------------------------------------------- #
+# Operational-health helpers (all read-only; used by /api/status so the
+# "monitor, don't fiddle" phase can SEE the cron + deps at a glance).
+# --------------------------------------------------------------------------- #
+def _last_activity_ts(led: Ledger) -> str | None:
+    """Most recent engine activity (max ts across the three written tables).
+
+    This is the strongest signal of "did the daily paper cycle run" — the cron
+    (`NovaParentPaperTraining`) writes decisions/nav/training rows every cycle.
+    """
+    best = None
+    for tbl in ("decisions", "nav_history", "training_records"):
+        try:
+            row = led.conn.execute(f"SELECT MAX(ts) m FROM {tbl}").fetchone()
+        except Exception:
+            continue
+        if row and row["m"] and (best is None or row["m"] > best):
+            best = row["m"]
+    return best
+
+
+def _age_hours(ts_iso: str | None) -> float | None:
+    """Hours since an ISO-8601 UTC timestamp (None-safe)."""
+    if not ts_iso:
+        return None
+    import datetime as _dt
+    try:
+        t = _dt.datetime.fromisoformat(ts_iso)
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=_dt.timezone.utc)
+        return round((_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() / 3600.0, 2)
+    except Exception:
+        return None
+
+
+def _file_age_hours(path: str) -> float | None:
+    """Hours since a file was last modified (None if missing)."""
+    import time
+    try:
+        return round((time.time() - os.path.getmtime(path)) / 3600.0, 2)
+    except OSError:
+        return None
+
+
+def _check_tws() -> dict:
+    """Is a TWS/Gateway API socket listening? A bare TCP connect (no IB handshake,
+    no orders) — purely read-only liveness for the data feed."""
+    import socket
+    port = int(os.environ.get("NOVA_IBKR_PORT", "7497"))
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.6):
+            return {"ok": True, "port": port}
+    except OSError as e:
+        return {"ok": False, "port": port, "detail": e.__class__.__name__}
+
+
+def _check_ollama() -> dict:
+    """Is the Ollama auditor reachable? GET /api/tags (read-only)."""
+    import urllib.request
+    host = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+    if not host.startswith("http"):
+        host = "http://" + host
+    try:
+        with urllib.request.urlopen(host + "/api/tags", timeout=0.8) as r:
+            return {"ok": r.status == 200, "host": host}
+    except Exception as e:
+        return {"ok": False, "host": host, "detail": e.__class__.__name__}
 
 
 # --------------------------------------------------------------------------- #
@@ -170,8 +242,40 @@ def ep_regime() -> dict:
         led.close()
 
 
+def ep_status() -> dict:
+    """Operational health for the 'monitor, don't fiddle' phase: did the daily
+    paper cycle run, is it stale, and are TWS + Ollama reachable. Read-only.
+
+    `stale` flags the last cycle older than NOVA_STALE_HOURS (default 72h, which
+    spans a Fri->Mon weekend gap of the weekday cron). `healthy` is the rollup.
+    """
+    stale_after = float(os.environ.get("NOVA_STALE_HOURS", "72"))
+    led = _ledger()
+    try:
+        last = _last_activity_ts(led)
+    finally:
+        led.close()
+    cycle_age = _age_hours(last)
+    log_age = _file_age_hours(os.path.join("logs", "forward.log"))
+    stale = cycle_age is None or cycle_age > stale_after
+    tws, ollama = _check_tws(), _check_ollama()
+    # The cron self-heals (yfinance / neutral-auditor fallbacks), so a down dep is
+    # a WARN not a failure; "healthy" is really "is the cycle running & fresh".
+    return {
+        "healthy": (last is not None) and (not stale),
+        "last_cycle": last,
+        "last_cycle_age_hours": cycle_age,
+        "stale": stale,
+        "stale_after_hours": stale_after,
+        "forward_log_age_hours": log_age,
+        "dependencies": {"tws": tws, "ollama": ollama},
+        "note": "deps down => cron self-heals via yfinance / neutral-50 auditor",
+    }
+
+
 ROUTES = {
     "/api/health": lambda qs: ep_health(),
+    "/api/status": lambda qs: ep_status(),
     "/api/summary": lambda qs: ep_summary(),
     "/api/trades": ep_trades,
     "/api/positions": lambda qs: ep_positions(),
@@ -206,6 +310,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    import sys
+    if "--status" in sys.argv[1:]:
+        # One-shot operational health check (no server) — a quick terminal glance
+        # for the "monitor, don't fiddle" phase. Exit 0 if healthy, 1 if not.
+        s = ep_status()
+        print(json.dumps(s, indent=2, default=str))
+        sys.exit(0 if s.get("healthy") else 1)
     print(f"Nova dashboard API (READ-ONLY) -> http://127.0.0.1:{PORT}  db={DB_PATH}")
     print(f"CORS allow-origin: {ALLOW_ORIGIN}  | routes: {', '.join(ROUTES)}")
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
