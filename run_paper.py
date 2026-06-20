@@ -58,7 +58,14 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
 
     feed = None
     if use_feed:
-        feed = IBKRDataFeed()  # TWS paper @ 127.0.0.1:7497, readonly
+        # Port is env-configurable so TWS<->IB Gateway is a flip, no code edit:
+        # TWS paper 7497 (default) / live 7496; IB Gateway paper 4002 / live 4001.
+        # ib_async is port-identical. NOTE: switching to Gateway does NOT remove IBKR's
+        # ~weekly mandatory re-login (account-security policy on both); only IBC/IBeam
+        # automates that (a separate, security-sensitive setup).
+        import os
+        port = int(os.environ.get("NOVA_IBKR_PORT", "7497"))
+        feed = IBKRDataFeed(port=port)  # read-only
         if feed.connect():
             dl.set_price_feed(feed)
             log.info("Live IBKR data feed engaged (read-only).")
