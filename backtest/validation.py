@@ -455,12 +455,18 @@ def validate_from_ledger(ctx, ledger, *, run_robustness: bool = True,
         #    DD), and thematic equity is inherently extreme-DD, so a DD/MC gate would
         #    just reject the whole asset class. Operator's informed choice (2026-06-18).
         #  * Universal floor still applies: profit factor > 1 + walk-forward Sharpe > 0.
+        #  * SORTINO is CLEARED (min_sortino=None): it is a TRADE-level metric that leaks
+        #    in from the ISA/GIA base profiles via replace(); MAR/Calmar is the correct
+        #    risk-adjusted gate for an equity CURVE. (SIPP's base has no Sortino, so this
+        #    was inconsistent: a volatile-but-compounding aggressive book — e.g. GIA's
+        #    US-AI basket — can have MAR 0.54 yet monthly-return Sortino 0.29; MAR is the
+        #    honest measure there. 2026-06-20.)
         # ACCEPTED, DOCUMENTED RISK: pure thematic does NOT survive a GFC-scale crash
         # even on these metrics (the lost-decade tail) — graduation rests on in-sample
         # long-horizon metrics, with the hard operator-sign-off gate as the backstop.
         curve_profile = replace(
             profile, min_trades=ALLOCATION_MIN_PERIODS,
-            min_win_rate=0.55, max_drawdown_pct=None,
+            min_win_rate=0.55, max_drawdown_pct=None, min_sortino=None,
             mc_max_drawdown_pct=100.0, min_mar=0.30)
         return validate_book(
             curve_profile, pnls=pr, returns=pr, nav_curve=nav,

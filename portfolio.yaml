@@ -121,36 +121,43 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false              # set true if a higher-rate taxpayer
-    gate_min: 80                  # MIRRORS ISA (was 78, tuned for the old nav_pct GIA): now
-                                  # that GIA runs ISA's strategy/sizing/mandate, it uses ISA's
-                                  # gate. gate 80 firms in-sample Sortino >= 1.0 (0.84 at 78).
-    # CANONICAL 2026-06-18: GIA mirrors the ISA strategy + sizing. Per "Wrapper⊥Strategy",
-    # drawdown is a market property, not a tax property — so GIA shares ISA's market-risk
-    # MANDATE (see validation.py GIA profile, now = ISA's). Tax efficiency is a separate
-    # realization-timing overlay (defer CGT, harvest losses vs the £3k AEA, low turnover),
-    # not a tighter risk profile. Risk-based ATR sizing halved GIA's GFC MC tail (17.8->8.9%).
-    # GIA "Rocket Ship" — US high-beta growth watchlist (modernized 2026-06-18 from the
-    # operator's GIA matrix concept; best trailing-12m performers + DD-vetted recs; deep
-    # laggards (SMR -70%, COIN -45%, CRWV -31%, TMC -24%) dropped). US-listed (its own book).
+    # GIA "Rocket Ship" = AGGRESSIVE US-GROWTH ALLOCATION (reworked 2026-06-20).
+    # CHANGED from the tactical ML scanner to a regime-gated, diversified buy-and-hold
+    # allocation — the proven ISA/SIPP structure, US-tilted and more aggressive. WHY: the
+    # 2026-06-19 Ichimoku staleness+lookahead bug (commit e40b9d2) revealed GIA's tactical
+    # scanner "edge" was bug-inflated (on corrected features Sortino 1.34->0.37, PF 7.9->1.7,
+    # FAIL); the real edge is the REGIME GATE + allocation, not feature scanning. Allocation's
+    # LOW TURNOVER also suits GIA's CGT/tax-efficiency mandate (defers the taxable event).
+    # Curve-validated (MAR / % positive months), like ISA/SIPP.
+    strategy: allocation
+    gate_min: 75                  # validated allocation entry floor (as ISA/SIPP)
+    aggressive_liquidation: true  # regime de-risk to cash
+    derisk_gate: 65               # EXIT floor (hysteresis), anti-whipsaw
+    # Per-book GROWTH BASKET: US AI-infrastructure megacaps (HELD, not scanned) + a gold
+    # crash-diversifier + a global ballast. (Dropped vs the old tactical watchlist: IREN/CRML
+    # speculative microcaps + 3LNV.L 3x-leveraged — unsafe to BUY-AND-HOLD.) UK investors can
+    # hold US single stocks in a GIA. Backtest proxies in [..].
     universe:
-      - IREN     # IREN (AI compute)         +508%/12m  [matrix]
-      - CRML     # Critical Metals Corp      +364%      [matrix]
-      - MU       # Micron (AI memory)        +836%      [recommendation]
-      - VRT      # Vertiv (data-centre power)+181%      [recommendation]
-      - ASML     # ASML (litho)              +156%      [matrix]
-      - GEV      # GE Vernova (power)        +128%      [recommendation]
-      - TSM      # TSMC (foundry)            +120%      [matrix]
-      - ANET     # Arista (AI networking)     +89%      [recommendation]
-      - 3LNV.L   # GraniteShares 3x NVDA      +77%      [matrix: max aggression]
-      - AVGO     # Broadcom (AI silicon)      +66%      [recommendation]
-      - NVDA     # Nvidia (AI)                +46%      [recommendation]
+      - NVDA     # Nvidia (AI accelerators)        [proxy QQQ]
+      - MU       # Micron (AI memory/HBM)          [proxy SOXX]
+      - AVGO     # Broadcom (AI silicon)           [proxy QQQ]
+      - TSM      # TSMC (foundry)                  [proxy SOXX]
+      - ASML     # ASML (litho)                    [proxy SOXX]
+      - ANET     # Arista (AI networking)          [proxy QQQ]
+      - VRT      # Vertiv (data-centre power)      [proxy QQQ]
+      - GEV      # GE Vernova (grid/power)         [proxy SPY]
+      - SGLN.L   # iShares Physical Gold           crash diversifier   [proxy GLD]
+      - VWRP.L   # Vanguard FTSE All-World (Acc)   global ballast      [proxy SPY]
+    guardrails:
+      max_correlation: 0.99       # hold the full basket (don't de-duplicate)
     sizing:
-      type: atr_sizing
-      risk_pct: 0.35
-      leverage: 0.35              # per-position notional cap (notional <= NAV*0.35), not margin
+      type: nav_pct
+      max_per_position_pct: 10    # equal-weight: ~10 holdings x ~10% = ~100% invested
+      leverage: 1.0
       unit: shares
-      stop_atr_multiplier: 2.0
-      take_atr_multiplier: 4.0
+      stop_pct: 0.30              # wide: exits are regime-driven, not stop-driven
+      take_pct: 10.0              # effectively no take-profit (hold/compound)
+      trailing_pct: 0.30
 
   # Leveraged spot Forex. Wrapper-locked to a taxable margin account — FX/options
   # must NEVER appear in ISA/SIPP allowed_assets. CGT applies to spot FX gains for

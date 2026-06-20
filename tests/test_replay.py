@@ -4,8 +4,18 @@ import numpy as np
 import pandas as pd
 
 import layers.data_loader as dl
-from core.context import Candidate
+from core.context import Candidate, AccountContext, NullTaxPolicy
+from core.risk import NavPctSizing
 from backtest.replay import ReplayFeed, run_replay
+
+
+def _tactical_equity_book(universe=("SPY", "NVDA")):
+    """A tactical EQUITY book for the replay-harness tests. portfolio.yaml's equity books
+    are all ALLOCATION now (GIA reworked 2026-06-20), so these harness tests inject their
+    own tactical book + explicit universe rather than depending on the manifest."""
+    return AccountContext("ibkr_isa_equity", "ISA", "IBKR", "U_ISA", {"EQUITY", "ETF"},
+                          NullTaxPolicy(), NavPctSizing(), strategy="tactical",
+                          universe=list(universe))
 
 
 # --------------------------------------------------------------------------- #
@@ -81,7 +91,8 @@ def test_replay_generates_labelled_marker_dataset():
 
     ledger = run_replay(start, end, db_path=":memory:", step_days=1,
                         exec_threshold=30.0, loader=_flat,
-                        adapters=[_DeterministicAdapter()], do_report=False)
+                        adapters=[_DeterministicAdapter()], books=[_tactical_equity_book()],
+                        do_report=False)
     try:
         acted = [s for s in ledger.training_samples() if s["acted"]]
         assert acted, "replay should have produced at least one trade"
@@ -130,7 +141,8 @@ def test_neutral_auditor_skips_prompt_build():
     adapter = _PromptSpyAdapter()
     ledger = run_replay(start, end, db_path=":memory:", step_days=1,
                         exec_threshold=30.0, loader=_flat,
-                        adapters=[adapter], do_report=False)   # default NeutralAuditor
+                        adapters=[adapter], books=[_tactical_equity_book()],
+                        do_report=False)   # default NeutralAuditor
     try:
         acted = [s for s in ledger.training_samples() if s["acted"]]
         assert acted, "replay should still trade with the prompt skipped"
@@ -146,7 +158,8 @@ def test_prompt_using_auditor_still_builds_prompt():
     adapter = _PromptSpyAdapter()
     ledger = run_replay(start, end, db_path=":memory:", step_days=1,
                         exec_threshold=30.0, loader=_flat,
-                        adapters=[adapter], auditor=StubAuditor(), do_report=False)
+                        adapters=[adapter], auditor=StubAuditor(),
+                        books=[_tactical_equity_book()], do_report=False)
     try:
         assert adapter.prompt_calls > 0, "a prompt-using auditor must build the Inference Context Bundle"
     finally:
@@ -165,7 +178,8 @@ def test_real_scanner_runs_through_replay(monkeypatch):
     start, end = idx[-3], idx[-1]                           # 2 steps, REAL scanner
 
     ledger = run_replay(start, end, db_path=":memory:", step_days=1, exec_threshold=50.0,
-                        loader=_mixed, adapters=[EquityAdapter()], do_report=False)
+                        loader=_mixed, adapters=[EquityAdapter()],
+                        books=[_tactical_equity_book()], do_report=False)
     try:
         samples = ledger.training_samples()
         assert samples, "real scanner should have produced audited candidates"

@@ -176,6 +176,24 @@ def run_enriched(label, start, end, proxies, db, step=1):
     led.close()
 
 
+def run_alloc(book_id, label, start, end, proxies, db, step=1):
+    """Validate ANY allocation book with long-history PROXIES, injected as its PER-BOOK
+    universe (the engine passes ctx.universe to the adapter — passing basket= to the
+    adapter is overridden by a book's per-book universe, so we must replace ctx.universe).
+    ~fully invested equal-weight; curve-validated."""
+    from core.risk import NavPctSizing
+    print(f"\n########## {label}: {start}->{end} {book_id} proxies={proxies} ##########", flush=True)
+    books = load_books("portfolio.yaml")
+    b = next(x for x in books if x.book_id == book_id)
+    w = max(1, int(100 / len(proxies)))
+    sz = NavPctSizing(max_per_position_pct=w, leverage=1.0, unit="shares",
+                      stop_pct=0.30, take_pct=10.0, trailing_pct=0.30)
+    b2 = dataclasses.replace(b, universe=list(proxies), sizing=sz)
+    led = run_replay(pd.Timestamp(start), pd.Timestamp(end), db_path=_fresh(db), step_days=step,
+                     exec_threshold=EXEC, adapters=[AllocationAdapter()], books=[b2], do_report=True)
+    led.close()
+
+
 def run_thematic(label, start, end, proxies, db, step=1):
     """SIPP-only thesis: equal-weight thematic basket through a window. ISA/GIA/FX
     stay canonical (untouched); we read the SIPP result. Relax the SIPP correlation
@@ -275,8 +293,14 @@ if __name__ == "__main__":
         # enriched SIPP, growth-tilted) instead of the choppy tactical scanner. Growth
         # core + gold crash-diversifier, long-history proxies, curve-validated both windows.
         g = ["SPY", "QQQ", "SOXX", "XME", "GLD"]
-        run_enriched("ISA_ALLOC_GFC", "2007-01-03", "2018-01-02", g, "nova_isaalloc_gfc.db")
-        run_enriched("ISA_ALLOC_INS", "2018-01-02", "2026-06-01", g, "nova_isaalloc_ins.db")
+        run_alloc("ibkr_isa_equity", "ISA_ALLOC_GFC", "2007-01-03", "2018-01-02", g, "nova_isaalloc_gfc.db")
+        run_alloc("ibkr_isa_equity", "ISA_ALLOC_INS", "2018-01-02", "2026-06-01", g, "nova_isaalloc_ins.db")
+    elif mode == "gia_alloc":
+        # GIA reworked to aggressive US-growth allocation: validate via proxies (current,
+        # leakage-free features post-bugfix). Aggressive US growth + gold crash-diversifier.
+        g = ["QQQ", "SOXX", "SPY", "GLD"]
+        run_alloc("ibkr_gia_equity", "GIA_ALLOC_GFC", "2007-01-03", "2018-01-02", g, "nova_giaalloc_gfc.db")
+        run_alloc("ibkr_gia_equity", "GIA_ALLOC_INS", "2018-01-02", "2026-06-01", g, "nova_giaalloc_ins.db")
     elif mode == "modern":
         # ISA/GIA in-sample on the NEW canonical per-book universes (read ISA/GIA result).
         run_canon("MODERN_INS", "2018-01-02", "2026-06-01", ["VWRL.L"], "nova_modern_ins.db")

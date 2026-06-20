@@ -46,12 +46,14 @@ def test_sipp_book_uses_allocation():
     assert sipp.gate_min == 75
     assert sipp.aggressive_liquidation is True
     assert len(sipp.universe) == 12                   # per-book diversified basket
-    # ISA is now a GROWTH ALLOCATION book (option d, 2026-06-19); GIA stays tactical.
+    # ISA + GIA are both GROWTH ALLOCATION books now (ISA option-d 2026-06-19; GIA
+    # reworked 2026-06-20 after the staleness/lookahead bug de-validated its tactical scan).
     assert books["ibkr_isa_equity"].strategy == "allocation"
     assert books["ibkr_isa_equity"].gate_min == 75
     assert len(books["ibkr_isa_equity"].universe) == 8   # per-book growth basket
-    assert books["ibkr_gia_equity"].strategy == "tactical"
-    assert books["ibkr_gia_equity"].gate_min == 80
+    assert books["ibkr_gia_equity"].strategy == "allocation"
+    assert books["ibkr_gia_equity"].gate_min == 75
+    assert len(books["ibkr_gia_equity"].universe) == 10  # US AI megacaps + diversifiers
 
 
 # --------------------------------------------------------------------------- #
