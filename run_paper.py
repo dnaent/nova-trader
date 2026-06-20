@@ -44,7 +44,12 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
                  model_name: str = "qwen2.5:7b-instruct",
                  exec_threshold: float | None = None):
     """Assemble the paper-training engine. Returns (engine, books, ledger, feed)."""
-    books = load_books("portfolio.yaml")
+    # FX workstream CLOSED 2026-06-20: comprehensively tested (daily-technical, intraday,
+    # macro risk-proxy, cross-sectional/dollar-neutral) — no accessible edge. Excluded from
+    # the live loop so the track record is purely the validated 3 equity allocation books.
+    # The book definition stays in portfolio.yaml (parked) + the research probes remain as
+    # the documented evidence; re-add here to revisit.
+    books = [b for b in load_books("portfolio.yaml") if b.book_id != "ibkr_forex_margin"]
     cfg = load_engine_config("config.yaml")
     if exec_threshold is not None:
         # Paper-only override so the operator can deliberately exercise the full
@@ -73,8 +78,9 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
     # SIPP runs the path-A thematic basket from config (falls back to the adapter's
     # default broad-ETF basket if unset).
     alloc = AllocationAdapter(basket=cfg.allocation_basket or None)
-    engine = Engine(books, [EquityAdapter(), FxAdapter(), alloc],
-                    broker, auditor, ledger, cfg)
+    # All live books are regime-gated ALLOCATION now (ISA/SIPP/GIA); the tactical
+    # EquityAdapter + FxAdapter are retired from the live loop (no book uses them).
+    engine = Engine(books, [alloc], broker, auditor, ledger, cfg)
     return engine, books, ledger, feed
 
 

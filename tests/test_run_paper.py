@@ -21,15 +21,17 @@ def test_broker_seed_positions_rehydrates_from_ledger():
 
 
 def test_build_engine_offline():
-    """Engine assembles with all 4 books + both adapters, no feed, no network."""
+    """Engine assembles with the 3 equity ALLOCATION books, no feed, no network.
+    FX was CLOSED/RETIRED 2026-06-20 (no accessible edge) — excluded from the live loop,
+    so only the AllocationAdapter is wired."""
     engine, books, ledger, feed = build_engine(db_path=":memory:", use_feed=False)
     try:
         assert feed is None                          # --no-feed path
         ids = {b.book_id for b in books}
-        assert {"ibkr_isa_equity", "ibkr_sipp_equity",
-                "ibkr_gia_equity", "ibkr_forex_margin"} <= ids
+        assert {"ibkr_isa_equity", "ibkr_sipp_equity", "ibkr_gia_equity"} <= ids
+        assert "ibkr_forex_margin" not in ids        # FX retired from the live loop
         kinds = {type(a).__name__ for a in engine.asset_adapters}
-        assert kinds == {"EquityAdapter", "FxAdapter", "AllocationAdapter"}
+        assert kinds == {"AllocationAdapter"}        # all live books are allocation now
         # Paper stub gives every book a simulated NAV keyed by its account id.
         for b in books:
             assert engine.broker._navs[b.ibkr_account_id] == DEFAULT_NAVS.get(b.wrapper, 5000)

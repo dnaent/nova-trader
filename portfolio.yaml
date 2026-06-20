@@ -171,13 +171,17 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false              # set true if a higher-rate taxpayer
-    # PARKED 2026-06-20: no validated DAILY edge. The staleness/lookahead bugfix
-    # de-validated the EMA/ADX trend (PF 2.35->1.2), and a TSMOM re-think also failed
-    # (PF 0.97-1.15) — the USD majors have no reliable daily signal for us. FX's real
-    # opportunity is INTRADAY (session/time-of-day) — see research/INTRADAY_FX_TIMING_SCOPE.md
-    # (the merged Phase 2/3 sprint is the next FX workstream). gate_min 999 = unreachable
-    # ⇒ the book never opens new entries (parked) until the intraday strategy replaces this.
-    gate_min: 999                     # PARKED (unreachable gate) — no validated daily edge
+    # CLOSED / RETIRED 2026-06-20 (operator + Gemini consensus). FX was comprehensively
+    # stress-tested and has NO accessible edge for our infra/constraints: daily-technical
+    # (EMA/ADX PF 1.2, TSMOM PF 0.97-1.15), intraday (session/breakout/momentum — no
+    # cost-surviving edge), macro risk-proxy (regime-gated AUD/JPY GFC PF 0.39), and
+    # cross-sectional/dollar-neutral momentum (diversifying but ZERO return). Root cause:
+    # FX is relative/zero-sum with NO intrinsic drift (unlike the equity risk premium the
+    # equity books harvest). EXCLUDED from the live loop (run_paper.py); this definition is
+    # retained for the record + reversibility. Research evidence: backtest/fx_intraday_probe.py,
+    # backtest/fx_xsectional_probe.py, research/INTRADAY_FX_TIMING_SCOPE.md. gate_min 999
+    # keeps it inert even if re-included anywhere.
+    gate_min: 999                     # RETIRED (unreachable gate) — no accessible edge
     sizing:
       type: atr_sizing
       risk_pct: 1.0                   # per-trade risk (reduced to 1% to bring the trend
