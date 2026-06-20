@@ -98,7 +98,7 @@ def ep_trades(qs: dict) -> dict:
     led = _ledger()
     try:
         sql = ("SELECT id,ts,book_id,symbol,side,quantity,price,notional,status,"
-               "realized_pnl,r_multiple FROM trades")
+               "realized_pnl FROM trades")   # r_multiple lives in training_records, not trades
         params = ()
         if book:
             sql += " WHERE book_id=?"; params = (book,)
