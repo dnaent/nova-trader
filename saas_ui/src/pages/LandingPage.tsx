@@ -556,201 +556,151 @@ export default function LandingPage() {
     </section>
 
     {/* Portfolios Section */}
-    <section id="portfolios" className="portfolios">
+        <section id="portfolios" className="portfolios">
         <div className="container">
-            <h2 className="section-title">Investment Portfolios</h2>
+            <h2 className="section-title">5-Book Unified Architecture</h2>
             <div className="portfolios-grid">
+                
+                {/* Book 1: ISA */}
                 <div className="portfolio-card" data-portfolio="isa">
                     <div className="portfolio-header">
                         <div className="portfolio-title-group">
-                            <h3>ISA Portfolio</h3>
-                            <span className="portfolio-nickname">"The Aeroplane"</span>
+                            <h3>ISA Book</h3>
+                            <span className="portfolio-nickname">"The Tax-Free Compounder"</span>
                         </div>
-                        <button className="portfolio-expand-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
-                            </svg>
-                        </button>
                     </div>
                     <div className="portfolio-value">£11,500</div>
-                    <div className="portfolio-description">Tax-free growth optimization with AI infrastructure focus</div>
+                    <div className="portfolio-description">Tax-free UK equity & ETF strategies utilizing the £20,000 annual allowance.</div>
                     <div className="portfolio-allocation">
                         <div className="allocation-bar">
                             <div className="allocation-fill" style={{ width: "15%" }}></div>
                         </div>
-                        <span>15% of total portfolio</span>
+                        <span>15% Total Allocation</span>
                     </div>
-                    <div className="portfolio-details">
-                        <div className="portfolio-metrics">
-                            <div className="metric-item-small">
-                                <span className="metric-label">YTD Return</span>
-                                <span className="metric-value positive">+18.3%</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Holdings</span>
-                                <span className="metric-value">12</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Risk Level</span>
-                                <span className="metric-value">Moderate</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Tax Status</span>
-                                <span className="metric-value positive">Tax-Free</span>
-                            </div>
+                    <div className="portfolio-metrics" style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Strategy</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>Equity / ETF</span>
                         </div>
-                        <div className="portfolio-strategy">
-                            <h4>Investment Strategy</h4>
-                            <ul>
-                                <li>AI infrastructure ETFs (40%)</li>
-                                <li>UK dividend aristocrats (30%)</li>
-                                <li>Growth technology stocks (30%)</li>
-                            </ul>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '4px'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Tax Status</span>
+                            <span style={{color: 'var(--success)', fontFamily: 'monospace', fontWeight: 'bold'}}>Tax-Free</span>
                         </div>
                     </div>
                 </div>
+
+                {/* Book 2: SIPP */}
                 <div className="portfolio-card" data-portfolio="sipp">
                     <div className="portfolio-header">
                         <div className="portfolio-title-group">
-                            <h3>SIPP Portfolio</h3>
+                            <h3>SIPP Book</h3>
                             <span className="portfolio-nickname">"The Pension Fortress"</span>
                         </div>
-                        <button className="portfolio-expand-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
-                            </svg>
-                        </button>
                     </div>
                     <div className="portfolio-value">£20,372</div>
-                    <div className="portfolio-description">25-year compounding strategy with critical minerals exposure</div>
+                    <div className="portfolio-description">Pension-optimized balanced allocation for 25-year compounding.</div>
                     <div className="portfolio-allocation">
                         <div className="allocation-bar">
                             <div className="allocation-fill" style={{ width: "27%" }}></div>
                         </div>
-                        <span>27% of total portfolio</span>
+                        <span>27% Total Allocation</span>
                     </div>
-                    <div className="portfolio-details">
-                        <div className="portfolio-metrics">
-                            <div className="metric-item-small">
-                                <span className="metric-label">YTD Return</span>
-                                <span className="metric-value positive">+22.7%</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Holdings</span>
-                                <span className="metric-value">18</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Risk Level</span>
-                                <span className="metric-value">High</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Time Horizon</span>
-                                <span className="metric-value">25 Years</span>
-                            </div>
+                    <div className="portfolio-metrics" style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Strategy</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>Balanced Growth</span>
                         </div>
-                        <div className="portfolio-strategy">
-                            <h4>Investment Strategy</h4>
-                            <ul>
-                                <li>Critical minerals mining (35%)</li>
-                                <li>Renewable energy infrastructure (25%)</li>
-                                <li>Global equity index funds (25%)</li>
-                                <li>Emerging market bonds (15%)</li>
-                            </ul>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '4px'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Time Horizon</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>25 Years</span>
                         </div>
                     </div>
                 </div>
+
+                {/* Book 3: GIA */}
                 <div className="portfolio-card" data-portfolio="gia">
                     <div className="portfolio-header">
                         <div className="portfolio-title-group">
-                            <h3>GIA Portfolio</h3>
-                            <span className="portfolio-nickname">"The Rocket Ship"</span>
+                            <h3>GIA Book</h3>
+                            <span className="portfolio-nickname">"The Agile Growth Engine"</span>
                         </div>
-                        <button className="portfolio-expand-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M7 14l5-5 5 5z" fill="currentColor"/>
-                            </svg>
-                        </button>
                     </div>
                     <div className="portfolio-value">£27,000</div>
-                    <div className="portfolio-description">Aggressive US growth strategy with maximum flexibility</div>
+                    <div className="portfolio-description">Aggressive US growth strategy optimized for UK CGT thresholds.</div>
                     <div className="portfolio-allocation">
                         <div className="allocation-bar">
                             <div className="allocation-fill" style={{ width: "35%" }}></div>
                         </div>
-                        <span>35% of total portfolio</span>
+                        <span>35% Total Allocation</span>
                     </div>
-                    <div className="portfolio-details">
-                        <div className="portfolio-metrics">
-                            <div className="metric-item-small">
-                                <span className="metric-label">YTD Return</span>
-                                <span className="metric-value positive">+31.2%</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Holdings</span>
-                                <span className="metric-value">25</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Risk Level</span>
-                                <span className="metric-value">Aggressive</span>
-                            </div>
-                            <div className="metric-item-small">
-                                <span className="metric-label">Flexibility</span>
-                                <span className="metric-value positive">Maximum</span>
-                            </div>
+                    <div className="portfolio-metrics" style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Strategy</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>US Tech & Small Cap</span>
                         </div>
-                        <div className="portfolio-strategy">
-                            <h4>Investment Strategy</h4>
-                            <ul>
-                                <li>US tech growth stocks (45%)</li>
-                                <li>Emerging market ETFs (25%)</li>
-                                <li>Small-cap growth funds (20%)</li>
-                                <li>Speculative opportunities (10%)</li>
-                            </ul>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '4px'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Tax Opt</span>
+                            <span style={{color: 'var(--warning)', fontFamily: 'monospace', fontWeight: 'bold'}}>CGT Managed</span>
                         </div>
                     </div>
                 </div>
-                <div className="portfolio-card">
+
+                {/* Book 4: Forex */}
+                <div className="portfolio-card" data-portfolio="forex">
                     <div className="portfolio-header">
-                        <h3>Crypto Portfolio</h3>
-                        <span className="portfolio-nickname">"The Digital Arsenal"</span>
-                    </div>
-                    <div className="portfolio-value">£10,500</div>
-                    <div className="portfolio-description">10-year conviction plays in blockchain infrastructure</div>
-                    <div className="portfolio-allocation">
-                        <div className="allocation-bar">
-                            <div className="allocation-fill" style={{ width: "14%" }}></div>
+                        <div className="portfolio-title-group">
+                            <h3>Forex Book</h3>
+                            <span className="portfolio-nickname">"The Volatility Capture"</span>
                         </div>
-                        <span>14% of total portfolio</span>
-                    </div>
-                </div>
-                <div className="portfolio-card">
-                    <div className="portfolio-header">
-                        <h3>Energy Matrix</h3>
-                        <span className="portfolio-nickname">"Geopolitical Arbitrage"</span>
                     </div>
                     <div className="portfolio-value">£10,000</div>
-                    <div className="portfolio-description">Short-term catalyst-driven opportunities in oil & gas</div>
+                    <div className="portfolio-description">High-frequency intraday currency pair trading (G10/Majors).</div>
                     <div className="portfolio-allocation">
                         <div className="allocation-bar">
                             <div className="allocation-fill" style={{ width: "13%" }}></div>
                         </div>
-                        <span>13% of total portfolio</span>
+                        <span>13% Total Allocation</span>
+                    </div>
+                    <div className="portfolio-metrics" style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Pairs</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>EUR/USD, GBP/USD</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '4px'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Execution</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>5-Min Loops</span>
+                        </div>
                     </div>
                 </div>
-                <div className="portfolio-card">
+
+                {/* Book 5: Crypto */}
+                <div className="portfolio-card" data-portfolio="crypto">
                     <div className="portfolio-header">
-                        <h3>Speculative Bets</h3>
-                        <span className="portfolio-nickname">"Asymmetric Plays"</span>
+                        <div className="portfolio-title-group">
+                            <h3>Crypto Book</h3>
+                            <span className="portfolio-nickname">"The Digital Frontier"</span>
+                        </div>
                     </div>
-                    <div className="portfolio-value">£6,300</div>
-                    <div className="portfolio-description">High-risk, high-reward moonshot opportunities</div>
+                    <div className="portfolio-value">£7,628</div>
+                    <div className="portfolio-description">DeFi integration, yield farming protocols, and blockchain exposure.</div>
                     <div className="portfolio-allocation">
                         <div className="allocation-bar">
-                            <div className="allocation-fill" style={{ width: "8%" }}></div>
+                            <div className="allocation-fill" style={{ width: "10%" }}></div>
                         </div>
-                        <span>8% of total portfolio</span>
+                        <span>10% Total Allocation</span>
+                    </div>
+                    <div className="portfolio-metrics" style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Focus</span>
+                            <span style={{fontFamily: 'monospace', fontWeight: 'bold'}}>Web3 Infrastructure</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '4px'}}>
+                            <span style={{color: 'var(--text-tertiary)'}}>Risk Profile</span>
+                            <span style={{color: 'var(--danger)', fontFamily: 'monospace', fontWeight: 'bold'}}>High / Speculative</span>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
