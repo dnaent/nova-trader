@@ -114,7 +114,10 @@ def get_intraday_data(symbol: str, interval: str = "1h", lookback_days: int = 5)
         except Exception:
             pass
     try:
-        df = yf.Ticker(symbol).history(period=f"{lookback_days}d", interval=interval)
+        # yfinance limits intraday historical data based on interval.
+        # for '5m', max is 60 days.
+        days = min(lookback_days, 60) if interval in ["1m", "2m", "5m", "15m", "30m", "90m"] else lookback_days
+        df = yf.Ticker(symbol).history(period=f"{days}d", interval=interval)
         return df if (df is not None and not df.empty) else pd.DataFrame()
     except Exception:
         return pd.DataFrame()
@@ -257,3 +260,34 @@ def get_technical_features(symbol: str, lookback_days: int = 730) -> pd.DataFram
         return df
     except Exception:
         return pd.DataFrame()
+
+def get_intraday_features(symbol: str, interval: str = "5m", lookback_days: int = 5) -> pd.DataFrame:
+    """Fetch intraday base data and append the 30+ indicator matrix using pandas-ta."""
+    df = get_intraday_data(symbol, interval=interval, lookback_days=lookback_days)
+    if df.empty or len(df) < 50:
+        return pd.DataFrame()
+        
+    try:
+        # We use pandas-ta to append multiple indicators
+        df.ta.rsi(append=True)
+        df.ta.macd(append=True)
+        df.ta.stoch(append=True)
+        df.ta.bbands(append=True)
+        df.ta.atr(append=True)
+        df.ta.ema(length=20, append=True)
+        df.ta.ema(length=50, append=True)
+        df.ta.ema(length=200, append=True)
+        df.ta.adx(append=True)
+        # Ichimoku can return tuple, use direct append safely
+        df.ta.ichimoku(append=True)
+
+        # Drop the chikou span which introduces lookahead bias
+        df = df.drop(columns=[c for c in df.columns if c.upper().startswith("ICS")],
+                     errors="ignore")
+
+        # Clean up NaNs from lookback periods
+        df = df.dropna()
+        return df
+    except Exception:
+        return pd.DataFrame()
+

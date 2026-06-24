@@ -140,6 +140,17 @@ def _build_sizing(spec: dict) -> SizingPolicy:
             take_atr_multiplier=spec.get("take_atr_multiplier", 4.0),
             trailing_atr_multiplier=spec.get("trailing_atr_multiplier", 2.0),
         )
+
+    if sizing_type == "friction_sizing":
+        from core.risk import FrictionSizing
+        return FrictionSizing(
+            risk_pct=spec.get("risk_pct", 2.0),
+            leverage=spec.get("leverage", 1.0),
+            unit=spec.get("unit", "shares"),
+            stop_pct=spec.get("stop_pct", 0.05),
+            take_pct=spec.get("take_pct", 0.10),
+            friction_buffer=spec.get("friction_buffer", 0.0005)
+        )
         
     return NavPctSizing(
         max_per_position_pct=spec.get("max_per_position_pct", 8.0),

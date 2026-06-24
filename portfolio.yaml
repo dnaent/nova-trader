@@ -170,34 +170,83 @@ books:
     allowed_assets: ["FX"]
     tax_policy:
       type: uk_cgt
-      higher_rate: false              # set true if a higher-rate taxpayer
-    # CLOSED / RETIRED 2026-06-20 (operator + Gemini consensus). FX was comprehensively
-    # stress-tested and has NO accessible edge for our infra/constraints: daily-technical
-    # (EMA/ADX PF 1.2, TSMOM PF 0.97-1.15), intraday (session/breakout/momentum — no
-    # cost-surviving edge), macro risk-proxy (regime-gated AUD/JPY GFC PF 0.39), and
-    # cross-sectional/dollar-neutral momentum (diversifying but ZERO return). Root cause:
-    # FX is relative/zero-sum with NO intrinsic drift (unlike the equity risk premium the
-    # equity books harvest). EXCLUDED from the live loop (run_paper.py); this definition is
-    # retained for the record + reversibility. Research evidence: backtest/fx_intraday_probe.py,
-    # backtest/fx_xsectional_probe.py, research/INTRADAY_FX_TIMING_SCOPE.md. gate_min 999
-    # keeps it inert even if re-included anywhere.
-    gate_min: 999                     # RETIRED (unreachable gate) — no accessible edge
+      higher_rate: false
+    # RE-IMPLEMENTED (2026-06-24): Switched to 5-minute Intraday Framework (MACD/RSI/EMA200)
+    # using friction-aware bracket sizing. Re-enabled for the intraday sprint.
+    strategy: intraday
+    gate_min: 0                       # Intraday trades on momentum, not macro gate
+    universe:
+      - EURUSD
+      - GBPUSD
+      - USDJPY
+      - AUDUSD
     sizing:
-      type: atr_sizing
-      risk_pct: 1.0                   # per-trade risk (reduced to 1% to bring the trend
-                                      # book's drawdown under the 20% cap with margin;
-                                      # sizing scales DD but NOT PF/MAR/sample, which
-                                      # all already pass — 6-pair exposure needed 1%, not 1.5%)
-      leverage: 5.0                   # leverage cap <= 5:1 (notional <= 5 x NAV)
+      type: friction_sizing
+      risk_pct: 1.0
+      leverage: 5.0
       unit: units
-      stop_atr_multiplier: 2.0
-      take_atr_multiplier: 4.0
-      trailing_atr_multiplier: 2.0
+      stop_pct: 0.002                 # 20 pips roughly
+      take_pct: 0.004                 # 40 pips roughly
+      friction_buffer: 0.0001         # 1 pip friction
     guardrails:
-      max_drawdown_pct: 20.0          # Forex profile: DD <= 20%
+      max_drawdown_pct: 20.0
       daily_loss_cap_pct: 3.0
-      max_concurrent_positions: 4     # caps simultaneous FX exposure (tightened 6->4
-                                      # in the risk overhaul to cut concurrent drawdown)
+      max_concurrent_positions: 4
       max_correlation: 0.8
-      circuit_breaker_losses: 6       # pause new entries after 6 consecutive losses
-      circuit_breaker_cooldown: 15    # ...for 15 trading cycles (let the choppy regime pass)
+      circuit_breaker_losses: 6
+      circuit_breaker_cooldown: 15
+
+  # NEW 2026-06-24: Intraday Sleeve for ISA.
+  # Gives users the option to allocate funds to high-turnover day-trading within a tax-free wrapper.
+  - book_id: ibkr_isa_intraday
+    wrapper: ISA
+    broker: IBKR
+    ibkr_account_id: "U_ISA_INTRADAY_PLACEHOLDER"
+    allowed_assets: ["EQUITY", "ETF"]
+    tax_policy: null
+    strategy: intraday
+    gate_min: 0                       # Intraday momentum-driven
+    universe:
+      - SPY
+      - QQQ
+    sizing:
+      type: friction_sizing
+      risk_pct: 2.0
+      leverage: 1.0                   # NO margin in ISA
+      unit: shares
+      stop_pct: 0.005                 # 0.5% stop
+      take_pct: 0.01                  # 1.0% take
+      friction_buffer: 0.0005         # 0.05% friction
+    guardrails:
+      max_drawdown_pct: 15.0
+      daily_loss_cap_pct: 2.0
+      max_concurrent_positions: 5
+      max_correlation: 0.99           # allow trading both SPY/QQQ if signals align
+
+  # NEW 2026-06-24: Crypto Book
+  - book_id: ibkr_crypto_margin
+    wrapper: MARGIN
+    broker: IBKR
+    ibkr_account_id: "U_CRYPTO_PLACEHOLDER"
+    allowed_assets: ["CRYPTO"]
+    tax_policy:
+      type: uk_cgt
+      higher_rate: false
+    strategy: intraday
+    gate_min: 0                       # Crypto trades 24/7 on momentum
+    universe:
+      - BTC-USD
+      - ETH-USD
+    sizing:
+      type: friction_sizing
+      risk_pct: 2.0
+      leverage: 2.0
+      unit: units
+      stop_pct: 0.02                  # 2% stop
+      take_pct: 0.04                  # 4% take
+      friction_buffer: 0.001          # 0.1% spread/fee buffer
+    guardrails:
+      max_drawdown_pct: 30.0          # Higher volatility tolerance
+      daily_loss_cap_pct: 5.0
+      max_concurrent_positions: 2
+      max_correlation: 0.99

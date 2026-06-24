@@ -1,0 +1,6 @@
+lumibot
+statsmodels
+alpaca-trade-api
+matplotlib
+pytz
+timedelta

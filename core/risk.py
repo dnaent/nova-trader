@@ -186,3 +186,67 @@ class AtrSizing:
             meta={"capacity_factor": str(capacity), "atr": str(atr)}
         )
 
+
+class FrictionSizing:
+    """
+    Intraday friction-aware sizing.
+    Calculates brackets taking into account a friction buffer to avoid being stopped out by spread/fees.
+    """
+    def __init__(self, risk_pct: float = 2.0, leverage: float = 1.0,
+                 unit: str = "shares", stop_pct: float = 0.05, take_pct: float = 0.10,
+                 friction_buffer: float = 0.0005):
+        self.risk_pct = Decimal(str(risk_pct))
+        self.leverage = Decimal(str(leverage))
+        self.unit = unit
+        self.stop_pct = Decimal(str(stop_pct))
+        self.take_pct = Decimal(str(take_pct))
+        self.friction_buffer = Decimal(str(friction_buffer))
+
+    def size(self, candidate: Candidate, ctx: AccountContext, gate_score: float) -> Order:
+        capacity = gate_capacity(gate_score)
+        price = Decimal(candidate.price)
+        side = getattr(candidate, "side", "BUY")
+        
+        # Override buffer if provided dynamically by candidate
+        friction = Decimal(str(candidate.meta.get("friction_buffer", self.friction_buffer)))
+
+        if price == Decimal("0"):
+            return Order(
+                book_id=ctx.book_id, account_id=ctx.ibkr_account_id, symbol=candidate.symbol, side=side,
+                quantity=Decimal("0"), price=price, notional=Decimal("0")
+            )
+
+        capital_at_risk = (ctx.nav * (self.risk_pct / Decimal("100")) * capacity)
+        stop_dist = price * self.stop_pct
+        
+        qty = (capital_at_risk / stop_dist).to_integral_value(rounding=ROUND_DOWN)
+        notional = (qty * price).quantize(Decimal("0.01"))
+        
+        max_notional = (ctx.nav * self.leverage)
+        if notional > max_notional and price > 0:
+            qty = (max_notional / price).to_integral_value(rounding=ROUND_DOWN)
+            notional = (qty * price).quantize(Decimal("0.01"))
+
+        fric = price * friction
+        quantum = Decimal("0.0001") if price < Decimal("50") else Decimal("0.01")
+        
+        if side == "SELL":
+            stop_loss = (price + stop_dist + fric).quantize(quantum)
+            take_profit = (price - (price * self.take_pct) + fric).quantize(quantum)
+        else:
+            stop_loss = (price - stop_dist - fric).quantize(quantum)
+            take_profit = (price + (price * self.take_pct) - fric).quantize(quantum)
+
+        return Order(
+            book_id=ctx.book_id,
+            account_id=ctx.ibkr_account_id,
+            symbol=candidate.symbol,
+            side=side,
+            quantity=qty,
+            price=price,
+            notional=notional,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            meta={"capacity_factor": str(capacity), "friction_applied": str(fric)}
+        )
+
