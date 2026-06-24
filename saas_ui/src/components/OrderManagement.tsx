@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Order Management System
+ * Nova Trading - Order Management System
  * Ultra-fast order entry, execution, and management for professional trading
  */
 import React, { useState, useEffect, useRef } from 'react';

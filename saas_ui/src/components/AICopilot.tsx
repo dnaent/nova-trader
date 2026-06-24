@@ -1,5 +1,5 @@
 /**
- * Nova Trader - AI Copilot Component
+ * Nova Trading - AI Copilot Component
  * Thoughtful, adaptive AI assistance for trading decisions
  */
 import React, { useState, useEffect } from 'react';

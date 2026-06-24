@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Advanced Risk Management Dashboard
+ * Nova Trading - Advanced Risk Management Dashboard
  * Real-time risk monitoring, correlation analysis, and portfolio protection
  */
 import React, { useState, useEffect } from 'react';

@@ -22,6 +22,9 @@ function ColorSchemeToggle() {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { mode, systemMode } = useColorScheme();
+  const currentMode = mode === 'system' ? systemMode : mode;
+  const logoSrc = currentMode === 'dark' ? '/logo_dark.png' : '/logo_light.png';
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -53,13 +56,9 @@ export default function LandingPage() {
     {/* Navigation */}
     <nav className="navbar">
         <div className="nav-container">
-            <div className="nav-brand">
-                <div className="brand-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
-                    </svg>
-                </div>
-                <span className="brand-text">Nova<span className="brand-accent">Trader</span></span>
+            <div className="nav-brand" style={{ gap: '10px' }}>
+                <img src={logoSrc} alt="Nova Trading Logo" style={{ height: '28px', width: 'auto' }} />
+                <span className="brand-text">Nova<span className="brand-accent">Trading</span></span>
             </div>
             <div className="nav-menu">
                 <a href="#overview" className="nav-link">
@@ -831,13 +830,9 @@ export default function LandingPage() {
     <footer className="footer">
         <div className="container">
             <div className="footer-content">
-                <div className="footer-brand">
-                    <div className="brand-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
-                        </svg>
-                    </div>
-                    <span className="brand-text">Nova<span className="brand-accent">Trader</span></span>
+                <div className="footer-brand" style={{ gap: '10px' }}>
+                    <img src={logoSrc} alt="Nova Trading Logo" style={{ height: '24px', width: 'auto' }} />
+                    <span className="brand-text">Nova<span className="brand-accent">Trading</span></span>
                 </div>
                 <div className="footer-links">
                     <a href="#documentation">Documentation</a>

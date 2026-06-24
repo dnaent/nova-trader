@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Keyboard Trading Shortcuts Hook
+ * Nova Trading - Keyboard Trading Shortcuts Hook
  * Ultra-fast keyboard shortcuts for professional trading
  */
 import { useEffect, useCallback } from 'react';

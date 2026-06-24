@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Clean Trading Interface Theme
+ * Nova Trading - Clean Trading Interface Theme
  * Modern financial dashboard with light/dark mode support
  */
 import { extendTheme } from '@mui/joy/styles';
@@ -27,16 +27,16 @@ const theme = extendTheme({
           tertiary: '#9e9e9e',
         },
         primary: {
-          50: '#e3f2fd',
-          100: '#bbdefb',
-          200: '#90caf9',
-          300: '#64b5f6',
-          400: '#42a5f5',
-          500: '#2196f3', // Main brand blue
-          600: '#1e88e5',
-          700: '#1976d2',
-          800: '#1565c0',
-          900: '#0d47a1',
+          50: '#eef5fa',
+          100: '#d4e5f4',
+          200: '#b3cdeb',
+          300: '#8db0e0',
+          400: '#5f8ed4',
+          500: '#183e63', // Main brand navy blue
+          600: '#133454',
+          700: '#0f2a44',
+          800: '#0b2034',
+          900: '#071624',
         },
         success: {
           500: '#4caf50', // Profit green
@@ -77,16 +77,16 @@ const theme = extendTheme({
           tertiary: '#666666',
         },
         primary: {
-          50: '#e3f2fd',
-          100: '#bbdefb',
-          200: '#90caf9',
-          300: '#64b5f6',
-          400: '#42a5f5',
-          500: '#2196f3',
-          600: '#1e88e5',
-          700: '#1976d2',
-          800: '#1565c0',
-          900: '#0d47a1',
+          50: '#e6f0fa',
+          100: '#cbdff5',
+          200: '#98bee9',
+          300: '#669ede',
+          400: '#337dd4',
+          500: '#3a80cc', // Luminous steel blue for readability on dark backgrounds
+          600: '#255d99',
+          700: '#183e63',
+          800: '#0f2740',
+          900: '#071320',
         },
         success: {
           500: '#00e676', // Bright profit green for dark mode

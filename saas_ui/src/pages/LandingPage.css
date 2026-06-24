@@ -47,8 +47,11 @@
     --border: rgba(0, 0, 0, 0.08);
     --border-light: rgba(0, 0, 0, 0.15);
     --nav-bg: rgba(255, 255, 255, 0.85);
-    --card-bg: rgba(255, 255, 255, 0.03);
-    --card-hover: rgba(255, 255, 255, 0.08);
+    --card-bg: rgba(0, 0, 0, 0.02);
+    --card-hover: rgba(0, 0, 0, 0.04);
+    --hover-bg: rgba(24, 62, 99, 0.06);
+    --nav-link-hover: var(--primary);
+    --cta-shadow: rgba(24, 62, 99, 0.2);
 }
 
 [data-joy-color-scheme="dark"] {
@@ -57,6 +60,9 @@
     --nav-bg: rgba(13, 13, 13, 0.85);
     --card-bg: rgba(255, 255, 255, 0.03);
     --card-hover: rgba(255, 255, 255, 0.08);
+    --hover-bg: rgba(58, 128, 204, 0.15);
+    --nav-link-hover: #ffffff;
+    --cta-shadow: rgba(58, 128, 204, 0.35);
 }
 
 
@@ -92,16 +98,13 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background:
-        radial-gradient(ellipse at center, rgba(20, 20, 20, 0.98) 0%, rgba(15, 15, 15, 0.96) 100%),
-        linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.015) 25%, rgba(255, 255, 255, 0.015) 50%, transparent 50%, transparent 75%, rgba(255, 255, 255, 0.015) 75%);
-    background-size: auto, 4px 4px;
+    background: var(--nav-bg);
     backdrop-filter: blur(25px) saturate(1.2);
-    border-bottom: 1px solid rgba(51, 51, 51, 0.8);
+    border-bottom: 1px solid var(--border);
     z-index: 1000;
     padding: var(--spacing-md) 0;
     transition: all 0.3s ease;
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .nav-container {
@@ -161,8 +164,8 @@ body {
 }
 
 .nav-link:hover {
-    color: var(--text-primary);
-    background: rgba(255, 107, 53, 0.1);
+    color: var(--nav-link-hover);
+    background: var(--hover-bg);
     transform: translateY(-1px);
 }
 
@@ -231,7 +234,7 @@ body {
 
 .nav-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+    box-shadow: 0 8px 25px var(--cta-shadow);
     border-color: var(--orange-light);
 }
 

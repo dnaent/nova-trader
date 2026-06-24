@@ -21,6 +21,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { mode, systemMode } = useColorScheme();
+  const currentMode = mode === 'system' ? systemMode : mode;
+  const logoSrc = currentMode === 'dark' ? '/logo_dark.png' : '/logo_light.png';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +51,11 @@ export default function LoginPage() {
           bgcolor: 'background.surface'
         }}
       >
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <img src={logoSrc} alt="Nova Trading Logo" style={{ height: '56px', width: 'auto' }} />
+        </Box>
         <Typography level="h3" sx={{ mb: 1, textAlign: 'center' }}>
-          Nova Trader Auth
+          Nova Trading Auth
         </Typography>
         <Typography level="body-sm" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
           Sign in to access your trading dashboard
@@ -62,7 +68,7 @@ export default function LoginPage() {
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@novatrader.com"
+              placeholder="admin@novatrading.ai"
             />
           </FormControl>
           <FormControl sx={{ mb: 4 }}>

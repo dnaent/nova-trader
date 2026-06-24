@@ -237,6 +237,7 @@ function PositionRow({ position }: { position: typeof positions[0] }) {
 }
 
 export default function Dashboard() {
+  const { mode } = useColorScheme();
   // State management for dashboard
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'risk' | 'training' | 'analytics' | 'brokers' | 'latency' | 'engine'>('overview');
 
@@ -342,9 +343,10 @@ export default function Dashboard() {
             }}
           >
             {/* Left side - Branding and Status */}
-            <Stack direction="row" alignItems="center" spacing={3}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <img src={mode === 'dark' ? '/logo_dark.png' : '/logo_light.png'} alt="Nova Trading Logo" style={{ height: '32px', width: 'auto' }} />
               <Typography level="h3" fontWeight="bold" color="primary">
-                Nova Trader
+                Nova Trading
               </Typography>
 
               <Badge

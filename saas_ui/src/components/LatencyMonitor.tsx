@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Ultra-Low Latency Data Pipeline Monitor
+ * Nova Trading - Ultra-Low Latency Data Pipeline Monitor
  * Real-time latency tracking and optimization for high-frequency trading
  */
 import React, { useState, useEffect } from 'react';

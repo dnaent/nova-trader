@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Trading Broker API Settings
+ * Nova Trading - Trading Broker API Settings
  * Configuration interface for connecting to external trading APIs
  */
 import React, { useState } from 'react';
@@ -245,7 +245,7 @@ function BrokerCard({ config, onUpdate, onTest, onConnect }: {
                 endDecorator={config.autoConnect ? "Enabled" : "Disabled"}
               />
               <FormHelperText>
-                Automatically connect to this broker when Nova Trader starts
+                Automatically connect to this broker when Nova Trading starts
               </FormHelperText>
             </FormControl>
 

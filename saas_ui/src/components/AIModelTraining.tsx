@@ -1,5 +1,5 @@
 /**
- * Nova Trader - AI Model Training & Validation Dashboard
+ * Nova Trading - AI Model Training & Validation Dashboard
  * Local model training progress and performance validation for 3080Ti deployment
  */
 import React, { useState, useEffect } from 'react';

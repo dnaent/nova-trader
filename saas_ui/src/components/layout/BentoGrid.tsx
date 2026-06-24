@@ -1,5 +1,5 @@
 /**
- * Nova Trader - Bento Grid Layout System
+ * Nova Trading - Bento Grid Layout System
  * Multi-sized cards for data portability and spatial organization
  */
 import React from 'react';

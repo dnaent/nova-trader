@@ -41,7 +41,7 @@
   --glass-bg-hover: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-border-hover: var(--joy-palette-primary-300);
-  --glass-shadow: rgba(33, 150, 243, 0.08);
+  --glass-shadow: rgba(24, 62, 99, 0.08);
   --glass-inset: rgba(0, 0, 0, 0.05);
   --input-bg: rgba(255, 255, 255, 0.5);
   --select-bg: rgba(245, 245, 245, 0.8);
@@ -54,8 +54,8 @@
   --glass-bg: rgba(26, 26, 26, 0.6);
   --glass-bg-hover: rgba(36, 36, 36, 0.7);
   --glass-border: rgba(255, 255, 255, 0.04);
-  --glass-border-hover: rgba(33, 150, 243, 0.25);
-  --glass-shadow: rgba(33, 150, 243, 0.08);
+  --glass-border-hover: rgba(58, 128, 204, 0.25);
+  --glass-shadow: rgba(58, 128, 204, 0.08);
   --glass-inset: rgba(0, 0, 0, 0.35);
   --input-bg: rgba(0, 0, 0, 0.4);
   --select-bg: rgba(26, 26, 26, 0.8);
