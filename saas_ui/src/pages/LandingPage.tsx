@@ -2,6 +2,23 @@
 import React, { useEffect } from 'react';
 import './LandingPage.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { useColorScheme, IconButton } from '@mui/joy';
+import { Moon, Sun } from 'lucide-react';
+
+function ColorSchemeToggle() {
+  const { mode, setMode } = useColorScheme();
+  return (
+    <IconButton
+      onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
+      variant="outlined"
+      size="sm"
+      sx={{ borderRadius: 'xl', ml: 2 }}
+    >
+      {mode === 'light' ? <Moon /> : <Sun />}
+    </IconButton>
+  );
+}
+
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -94,14 +111,19 @@ export default function LandingPage() {
                     Capital Timeline
                 </a>
             </div>
-            <button className="nav-cta">
-                <span className="cta-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-1.99.85-3.77 2.17-5.41L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z" fill="currentColor"/>
-                    </svg>
-                </span>
-                Launch Platform
-            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+                <button className="nav-cta">
+                    <span className="cta-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-1.99.85-3.77 2.17-5.41L6.17 5.17A8.932 8.932 0 0 0 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    Launch Platform
+                </button>
+                <ColorSchemeToggle />
+            </div>
+
         </div>
     </nav>
 

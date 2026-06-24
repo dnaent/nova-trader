@@ -4,7 +4,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import {
-  CssVarsProvider,
   useColorScheme,
   Box,
   Card,
@@ -318,7 +317,6 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <CssVarsProvider theme={theme}>
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.body' }}>
         {/* Enhanced Top Navigation */}
         <Sheet
@@ -751,6 +749,5 @@ export default function Dashboard() {
           </Box>
         )}
       </Box>
-    </CssVarsProvider>
   );
 }

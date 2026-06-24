@@ -1,67 +1,51 @@
 /* Nova Trader - Sophisticated Financial Platform Styling */
 
+
 :root {
-    /* Luxury Color Palette */
-    --primary: #ff6b35;
-    --primary-light: #ff8c5a;
-    --primary-dark: #e55a2b;
-    --accent: #ff6b35;
-    --orange: #ff6b35;
-    --orange-light: #ff8c5a;
-    --orange-dark: #e55a2b;
-    --success: #4caf50;
-    --warning: #ff9800;
-    --danger: #f44336;
+    /* Dynamic Joy UI mapping */
+    --primary: var(--joy-palette-primary-500);
+    --primary-light: var(--joy-palette-primary-400);
+    --primary-dark: var(--joy-palette-primary-700);
+    --accent: var(--joy-palette-primary-500);
+    --orange: var(--joy-palette-primary-500);
+    --orange-light: var(--joy-palette-primary-400);
+    --orange-dark: var(--joy-palette-primary-700);
+    --success: var(--joy-palette-success-500);
+    --warning: var(--joy-palette-warning-500);
+    --danger: var(--joy-palette-danger-500);
 
     /* Luxury Neutrals */
-    --background: #0d0d0d;
-    --surface: #1a1a1a;
-    --surface-light: #262626;
-    --surface-dark: #141414;
-    --charcoal: #2e2e2e;
-    --charcoal-light: #404040;
-    --gray: #666666;
-    --gray-light: #808080;
-    --gray-dark: #4d4d4d;
-    --border: #333333;
-    --border-light: #404040;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --text-tertiary: #999999;
-
-    /* Luxury Gradients */
-    --gradient-primary: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
-    --gradient-accent: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
-    --gradient-orange: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
-    --gradient-surface: linear-gradient(135deg, var(--surface) 0%, var(--surface-light) 100%);
-    --gradient-charcoal: linear-gradient(135deg, var(--charcoal) 0%, var(--charcoal-light) 100%);
-    --gradient-text: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
-
-    /* Spacing */
-    --spacing-xs: 0.25rem;
-    --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
-    --spacing-2xl: 3rem;
-    --spacing-3xl: 4rem;
-
+    --background: var(--joy-palette-background-body);
+    --surface: var(--joy-palette-background-surface);
+    --surface-light: var(--joy-palette-background-level1);
+    --surface-dark: var(--joy-palette-background-level2);
+    
     /* Typography */
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-
-    /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.12);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.16);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.24);
-    --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.32);
-
-    /* Border radius */
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+    --text-primary: var(--joy-palette-text-primary);
+    --text-secondary: var(--joy-palette-text-secondary);
+    --text-tertiary: var(--joy-palette-text-tertiary);
+    
+    /* Fonts */
+    --font-heading: 'Space Mono', monospace;
+    --font-body: 'JetBrains Mono', monospace;
 }
+
+[data-joy-color-scheme="light"] {
+    --border: rgba(0, 0, 0, 0.08);
+    --border-light: rgba(0, 0, 0, 0.15);
+    --nav-bg: rgba(255, 255, 255, 0.85);
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-hover: rgba(255, 255, 255, 0.08);
+}
+
+[data-joy-color-scheme="dark"] {
+    --border: rgba(255, 255, 255, 0.08);
+    --border-light: rgba(255, 255, 255, 0.15);
+    --nav-bg: rgba(13, 13, 13, 0.85);
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-hover: rgba(255, 255, 255, 0.08);
+}
+
 
 /* Reset & Base Styles */
 * {

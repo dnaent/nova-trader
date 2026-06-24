@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
+
 :root {
-  /* Obsidian Base & Tonal Layering */
-  --background: #0e0e0e; /* Infinite Obsidian Void */
-  --surface-low: #131313; /* Large structural panels */
-  --surface-card: rgba(26, 26, 26, 0.6); /* Glassmorphic card base */
-  --surface-high: #20201f; /* Active fields and select tracks */
-  --surface-active: #2c2c2c; /* Hover highlight state */
+  /* Dynamic Joy UI mapping */
+  --background: var(--joy-palette-background-body);
+  --surface-low: var(--joy-palette-background-level1);
+  --surface-card: var(--joy-palette-background-surface);
+  --surface-high: var(--joy-palette-background-level2);
+  --surface-active: var(--joy-palette-background-level3);
   
-  --text: #ffffff;
-  --text-muted: #adaaaa;
+  --text: var(--joy-palette-text-primary);
+  --text-muted: var(--joy-palette-text-secondary);
   
-  /* Brand Highlights */
-  --primary: #ff6b35; /* Vibrant Orange */
-  --secondary: #008080; /* Teal Glow */
-  --success: #00A63D;
-  --warning: #FE9900;
-  --danger: #FF2157;
-  --info: #0ea5e9;
+  --primary: var(--joy-palette-primary-500); 
+  --secondary: var(--joy-palette-neutral-500);
+  --success: var(--joy-palette-success-500);
+  --warning: var(--joy-palette-warning-500);
+  --danger: var(--joy-palette-danger-500);
+  --info: var(--joy-palette-primary-400);
 
   /* Fonts */
   --font-primary: 'Space Mono', monospace;
@@ -35,6 +35,35 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 }
+
+[data-joy-color-scheme="light"] {
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-bg-hover: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: var(--joy-palette-primary-300);
+  --glass-shadow: rgba(33, 150, 243, 0.08);
+  --glass-inset: rgba(0, 0, 0, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.5);
+  --select-bg: rgba(245, 245, 245, 0.8);
+  --btn-glass-bg: rgba(0, 0, 0, 0.02);
+  --btn-glass-border: rgba(0, 0, 0, 0.06);
+  --slider-bg: rgba(0, 0, 0, 0.05);
+}
+
+[data-joy-color-scheme="dark"] {
+  --glass-bg: rgba(26, 26, 26, 0.6);
+  --glass-bg-hover: rgba(36, 36, 36, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --glass-border-hover: rgba(33, 150, 243, 0.25);
+  --glass-shadow: rgba(33, 150, 243, 0.08);
+  --glass-inset: rgba(0, 0, 0, 0.35);
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --select-bg: rgba(26, 26, 26, 0.8);
+  --btn-glass-bg: rgba(255, 255, 255, 0.02);
+  --btn-glass-border: rgba(255, 255, 255, 0.06);
+  --slider-bg: rgba(255, 255, 255, 0.05);
+}
+
 
 * {
   box-sizing: border-box;
@@ -69,25 +98,25 @@ h4 { font-size: 1.1rem; }
 
 /* Glassmorphic Cards (The Ethereal Core) */
 .glass-card {
-  background: var(--surface-card);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  background: rgba(36, 36, 36, 0.7);
-  border-color: rgba(255, 107, 53, 0.25);
-  box-shadow: 0 0 30px rgba(255, 107, 53, 0.08);
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 0 30px var(--glass-shadow);
   transform: translateY(-2px);
 }
 
 /* Inset containers */
 .glass-inset {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
 }
 
@@ -95,8 +124,8 @@ h4 { font-size: 1.1rem; }
 .input-glass {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--input-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-family: var(--font-mono);
@@ -107,15 +136,15 @@ h4 { font-size: 1.1rem; }
 
 .input-glass:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 10px rgba(255, 107, 53, 0.2);
+  box-shadow: 0 0 10px var(--glass-shadow);
 }
 
 /* Custom Select */
 .select-glass {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(26, 26, 26, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--select-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-family: var(--font-primary);
@@ -135,8 +164,8 @@ input[type="range"].range-glass {
   -webkit-appearance: none;
   width: 100%;
   height: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--slider-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
   outline: none;
 }
@@ -148,7 +177,7 @@ input[type="range"].range-glass::-webkit-slider-thumb {
   background: var(--background);
   border: 2px solid var(--primary);
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 0 10px var(--glass-shadow);
   cursor: pointer;
   transition: transform 0.1s ease, background-color 0.1s ease;
 }
@@ -186,8 +215,8 @@ input[type="range"].range-glass::-webkit-slider-thumb:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--slider-bg);
+  border: 1px solid var(--glass-border);
   transition: .3s;
   border-radius: 34px;
 }
@@ -205,22 +234,22 @@ input[type="range"].range-glass::-webkit-slider-thumb:hover {
 }
 
 .switch-glass input:checked + .slider-round {
-  background-color: rgba(255, 107, 53, 0.15);
+  background-color: var(--glass-shadow);
   border-color: var(--primary);
 }
 
 .switch-glass input:checked + .slider-round:before {
   transform: translateX(24px);
   background-color: var(--primary);
-  box-shadow: 0 0 10px var(--primary);
+  box-shadow: 0 0 10px var(--glass-shadow);
 }
 
 /* Glass Segmented Controls */
 .segmented-control {
   display: flex;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--input-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   gap: 4px;
 }
@@ -236,9 +265,9 @@ input[type="range"].range-glass::-webkit-slider-thumb:hover {
 }
 
 .segmented-control button.active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg-hover);
   color: var(--primary);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
 }
 
 /* Glass Buttons with Ambient Glow */
@@ -253,8 +282,8 @@ button {
 .btn-glass {
   padding: 12px 24px;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--btn-glass-bg);
+  border: 1px solid var(--btn-glass-border);
   border-radius: var(--radius-full);
   transition: all 0.2s ease;
   font-size: 0.9rem;
@@ -264,13 +293,13 @@ button {
 
 .btn-glass:hover {
   color: var(--primary);
-  background: rgba(255, 107, 53, 0.05);
-  border-color: rgba(255, 107, 53, 0.3);
-  box-shadow: 0 0 15px rgba(255, 107, 53, 0.1);
+  background: var(--glass-shadow);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 0 15px var(--glass-shadow);
 }
 
 .btn-glass:active {
-  background: rgba(255, 107, 53, 0.1);
+  background: var(--glass-shadow);
 }
 
 .btn-primary {
@@ -278,7 +307,7 @@ button {
   color: #fff;
   background: var(--primary);
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 4px 15px var(--glass-shadow);
   transition: all 0.2s ease;
   font-size: 0.9rem;
   letter-spacing: 0.05em;
@@ -286,7 +315,7 @@ button {
 }
 
 .btn-primary:hover {
-  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5);
+  box-shadow: 0 4px 20px var(--glass-shadow);
   transform: translateY(-1px);
 }
 
@@ -303,7 +332,7 @@ button {
   background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-border);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
