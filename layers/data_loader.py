@@ -209,22 +209,45 @@ def get_financials(symbol: str) -> str:
     return "\n\n".join(parts)
 
 def get_recent_news(symbol: str) -> str:
-    """Fetch recent news headlines and publishers."""
+    """Fetch recent news headlines and extract FinBERT sentiment."""
     try:
         ticker = yf.Ticker(symbol)
         news = ticker.news
         if not news:
-            return f"No recent news found for {symbol}."
+            return '{"finbert_sentiment_score": 0.5, "sentiment_label": "neutral", "headlines": []}'
             
-        parts = ["### Recent News Headlines"]
+        headlines = []
         for item in news[:5]:
             title = item.get("title", "No Title")
-            publisher = item.get("publisher", "Unknown")
-            parts.append(f"- [{publisher}] {title}")
+            headlines.append(title)
             
-        return "\n".join(parts)
+        # Extract sentiment
+        from layers.finbert_utils import estimate_sentiment
+        prob, label = estimate_sentiment(headlines)
+        
+        # Normalize score
+        # 0.0 to 1.0 mapping, where 0.0 is 100% negative, 1.0 is 100% positive, 0.5 is neutral
+        if label == "positive":
+            score = 0.5 + (0.5 * prob)
+        elif label == "negative":
+            score = 0.5 - (0.5 * prob)
+        else:
+            score = 0.5
+            
+        import json
+        return json.dumps({
+            "finbert_sentiment_score": round(score, 4),
+            "sentiment_label": label,
+            "headlines": headlines
+        }, indent=2)
     except Exception as e:
-        return f"News data unavailable for {symbol}: {str(e)}"
+        import json
+        return json.dumps({
+            "error": f"News data unavailable for {symbol}: {str(e)}",
+            "finbert_sentiment_score": 0.5,
+            "sentiment_label": "neutral",
+            "headlines": []
+        }, indent=2)
 
 def get_technical_features(symbol: str, lookback_days: int = 730) -> pd.DataFrame:
     """Fetch base data and append the 30+ indicator matrix using pandas-ta."""

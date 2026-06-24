@@ -7,9 +7,21 @@ from typing import Protocol, runtime_checkable
 def extract_score(text: str) -> float:
     """Parse a 0-100 score from an LLM audit reply.
 
-    Prefers the mandated 'SCORE: <n>' suffix; falls back to the last number in
-    the text, and finally to a neutral 50.0. Shared by every Auditor backend.
+    Prefers the mandated JSON schema containing {"score": <n>}.
+    Falls back to regex 'SCORE: <n>', then to the last number in the text,
+    and finally to a neutral 50.0. Shared by every Auditor backend.
     """
+    import json
+    # Attempt to extract JSON if it is wrapped in markdown or just raw text
+    json_match = re.search(r"\{.*\}", text, re.DOTALL)
+    if json_match:
+        try:
+            payload = json.loads(json_match.group(0))
+            if "score" in payload:
+                return float(payload["score"])
+        except json.JSONDecodeError:
+            pass
+
     match = re.search(r"SCORE:\s*([0-9.]+)", text, re.IGNORECASE)
     if match:
         return float(match.group(1))
@@ -23,16 +35,20 @@ class Auditor(Protocol):
     def audit(self, prompt: str) -> float: ...
 
 class LLMAuditor:
-    def __init__(self, backend="local", model_name="qwen2.5:7b-instruct", base_url="http://localhost:11434/v1"):
+    def __init__(self, backend="local", model_name="qwen2.5-coder:7b", base_url="http://localhost:11434/v1"):
         self.backend = backend.lower()
         self.model_name = model_name
         self.base_url = base_url
         self.system_prompt = (
             "You are a strict, quantitative financial auditor (Layer 3 of Nova Engine). "
-            "Your job is to read the provided macro context and 4-quarter fundamental data for a company, "
+            "Your job is to read the provided macro context, technical features, news sentiment JSON, and 4-quarter fundamental data for a company, "
             "and output a fundamental risk score from 0 to 100. "
             "100 = flawless balance sheet and strong tailwinds. 0 = bankrupt or extremely toxic. "
-            "You must include a brief rationale, and you MUST end your response exactly with 'SCORE: <number>'."
+            "You must output ONLY valid JSON in the exact following schema without any markdown wrappers:\n"
+            "{\n"
+            "  \"chain_of_thought\": \"Brief rationale here...\",\n"
+            "  \"score\": <number>\n"
+            "}\n"
         )
 
     def audit(self, prompt: str) -> float:
