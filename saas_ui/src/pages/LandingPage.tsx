@@ -205,9 +205,9 @@ export default function LandingPage() {
                         </svg>
                     </div>
                     <h3>Algorithmic Trading</h3>
-                    <p>Advanced forex algorithms with LSTM neural networks, dynamic risk management, and multi-currency support across major pairs.</p>
+                    <p>Multi-agent AI framework powered by local edge-compute LLMs (Qwen 2.5) and FinBERT for deterministic, JSON-enforced market analysis.</p>
                     <div className="card-stats">
-                        <span>5 Currency Pairs • ML Integration • 24/7 Operation</span>
+                        <span>5-Minute Intraday • Edge AI Compute • JSON Schema Enforced</span>
                     </div>
                     <div className="metrics-grid">
                         <div className="metric-item">
@@ -513,42 +513,42 @@ export default function LandingPage() {
     {/* Architecture Section */}
     <section id="architecture" className="architecture">
         <div className="container">
-            <h2 className="section-title">System Architecture</h2>
+            <h2 className="section-title">System Architecture: Edge to Cloud</h2>
             <div className="architecture-diagram">
                 <div className="arch-layer">
-                    <h3>Data Ingestion</h3>
+                    <h3>Phase 1: Edge Compute</h3>
                     <div className="arch-components">
-                        <div className="arch-component">Pub/Sub Streaming</div>
-                        <div className="arch-component">Dataflow Pipelines</div>
-                        <div className="arch-component">Cloud Storage</div>
-                        <div className="arch-component">BigQuery Warehouse</div>
+                        <div className="arch-component">RTX 3080Ti Hardware</div>
+                        <div className="arch-component">Local Python Engine</div>
+                        <div className="arch-component">Ollama Inference</div>
+                        <div className="arch-component">High-Frequency Loops</div>
                     </div>
                 </div>
                 <div className="arch-layer">
-                    <h3>AI/ML Processing</h3>
+                    <h3>AI Multi-Agent Core</h3>
                     <div className="arch-components">
-                        <div className="arch-component">Vertex AI</div>
-                        <div className="arch-component">AutoML Tables</div>
-                        <div className="arch-component">TensorFlow</div>
-                        <div className="arch-component">BigQuery ML</div>
+                        <div className="arch-component">Qwen 2.5 Coder</div>
+                        <div className="arch-component">FinBERT Sentiment</div>
+                        <div className="arch-component">JSON Schema Enforcement</div>
+                        <div className="arch-component">Deterministic Auditor</div>
                     </div>
                 </div>
                 <div className="arch-layer">
-                    <h3>Application Layer</h3>
+                    <h3>SaaS Frontend UI</h3>
                     <div className="arch-components">
-                        <div className="arch-component">Cloud Run Services</div>
-                        <div className="arch-component">Cloud Functions</div>
-                        <div className="arch-component">Load Balancer</div>
-                        <div className="arch-component">API Gateway</div>
+                        <div className="arch-component">React SPA</div>
+                        <div className="arch-component">Vite Build Engine</div>
+                        <div className="arch-component">MUI Joy Components</div>
+                        <div className="arch-component">Bento Grid Layout</div>
                     </div>
                 </div>
                 <div className="arch-layer">
-                    <h3>Infrastructure</h3>
+                    <h3>Phase 2: Cloud SaaS</h3>
                     <div className="arch-components">
-                        <div className="arch-component">Google Cloud Platform</div>
-                        <div className="arch-component">Cloud SQL PostgreSQL</div>
-                        <div className="arch-component">Secret Manager</div>
-                        <div className="arch-component">IAM Security</div>
+                        <div className="arch-component">Cloud LLM Migration</div>
+                        <div className="arch-component">Global User Auth</div>
+                        <div className="arch-component">Multi-Tenant Database</div>
+                        <div className="arch-component">Enterprise Scale API</div>
                     </div>
                 </div>
             </div>
@@ -761,39 +761,39 @@ export default function LandingPage() {
             <h2 className="section-title">Technology Stack</h2>
             <div className="tech-categories">
                 <div className="tech-category">
-                    <h3>AI/ML Platform</h3>
+                    <h3>Local AI Models</h3>
                     <div className="tech-items">
-                        <div className="tech-item">Vertex AI</div>
-                        <div className="tech-item">AutoML Tables</div>
-                        <div className="tech-item">BigQuery ML</div>
-                        <div className="tech-item">TensorFlow on GCP</div>
+                        <div className="tech-item">qwen2.5-coder:7b</div>
+                        <div className="tech-item">FinBERT NLP</div>
+                        <div className="tech-item">Ollama Server</div>
+                        <div className="tech-item">Strict JSON Schemas</div>
                     </div>
                 </div>
                 <div className="tech-category">
-                    <h3>Data & Analytics</h3>
+                    <h3>Frontend SaaS</h3>
                     <div className="tech-items">
-                        <div className="tech-item">BigQuery Data Warehouse</div>
-                        <div className="tech-item">Pub/Sub Messaging</div>
-                        <div className="tech-item">Dataflow Streaming</div>
-                        <div className="tech-item">Cloud Storage</div>
+                        <div className="tech-item">React 18</div>
+                        <div className="tech-item">Vite Dev Server</div>
+                        <div className="tech-item">MUI Joy UI</div>
+                        <div className="tech-item">React Router DOM</div>
                     </div>
                 </div>
                 <div className="tech-category">
-                    <h3>Compute & Infrastructure</h3>
+                    <h3>Local Compute</h3>
                     <div className="tech-items">
-                        <div className="tech-item">Cloud Run Serverless</div>
-                        <div className="tech-item">Compute Engine VMs</div>
-                        <div className="tech-item">Cloud Functions</div>
-                        <div className="tech-item">Google Kubernetes Engine</div>
+                        <div className="tech-item">NVIDIA RTX 3080Ti</div>
+                        <div className="tech-item">Python 3.12 Engine</div>
+                        <div className="tech-item">Multi-threaded Core</div>
+                        <div className="tech-item">Zero-latency Edge Processing</div>
                     </div>
                 </div>
                 <div className="tech-category">
-                    <h3>Database & Security</h3>
+                    <h3>Future Cloud Tier</h3>
                     <div className="tech-items">
-                        <div className="tech-item">Cloud SQL PostgreSQL</div>
-                        <div className="tech-item">Cloud Firestore</div>
-                        <div className="tech-item">Secret Manager</div>
-                        <div className="tech-item">Identity & Access Management</div>
+                        <div className="tech-item">Hosted Cloud LLMs</div>
+                        <div className="tech-item">SaaS Authentication</div>
+                        <div className="tech-item">Horizontal Scaling</div>
+                        <div className="tech-item">Subscription API</div>
                     </div>
                 </div>
                 <div className="tech-category">
