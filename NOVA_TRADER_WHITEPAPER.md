@@ -16,9 +16,10 @@ Unlike traditional single-layer trading systems, Nova Trader employs a **60/40 d
 
 ### Key Innovations:
 - **Multi-Regime HMM Analysis**: Real-time market regime detection using Gaussian Hidden Markov Models
-- **Cross-Asset Correlation Mapping**: Dynamic risk management across equities, bonds, and commodities
-- **Multi-Provider AI Auditing**: Local LLaMA, Anthropic Claude, and Google Gemini integration
-- **Ultra-Low Latency Architecture**: Sub-millisecond execution targeting 0.8ms IBKR pipeline
+- **Decoupled FinBERT Sentiment Extraction**: Pure NLP sentiment tensor mapping decoupled from execution logic
+- **Qwen-Driven Deterministic JSON Execution**: Structured logic pipelines replacing unstructured LLM generation
+- **High-Frequency 5-Minute Intraday Engine**: Friction-aware intraday algorithmic layer operating at scale
+- **Multi-Provider AI Auditing**: Local Qwen 2.5, Anthropic Claude, and Google Gemini integration
 - **Comprehensive Validation Framework**: 6-metric scoring system with 95% composite threshold
 
 ---

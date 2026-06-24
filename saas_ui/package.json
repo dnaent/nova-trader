@@ -14,9 +14,10 @@
     "@emotion/styled": "^11.14.1",
     "@mui/joy": "^5.0.0-beta.52",
     "@mui/system": "^9.1.0",
-    "lucide-react": "^1.17.0",
+    "lucide-react": "^1.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-router-dom": "^7.18.0",
     "recharts": "^3.8.1"
   },
   "devDependencies": {
