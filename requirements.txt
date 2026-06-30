@@ -16,3 +16,8 @@ pyyaml
 pytest
 pandas-ta-classic==0.6.20
 ib_async==2.1.0          # read-only IBKR real-time data feed (TWS/IB Gateway)
+# FinBERT news-sentiment (layers/finbert_utils). CPU torch is sufficient (110M BERT,
+# sub-second). If missing, sentiment gracefully falls back to neutral. For the FUTURE
+# local-LLM training workstream, install CUDA torch separately (download.pytorch.org).
+torch
+transformers

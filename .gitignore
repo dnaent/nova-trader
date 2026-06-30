@@ -67,3 +67,7 @@ htmlcov/
 .pytest_cache/
 # Generated training corpora (regenerable, can be large)
 *.jsonl
+
+# IBC: the real config holds IBKR credentials in clear text — keep it OUT of git.
+# Only the placeholder template (infra/ibc/config.ini.template) is tracked.
+infra/ibc/config.ini

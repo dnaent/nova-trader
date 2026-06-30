@@ -1,0 +1,50 @@
+# =============================================================================
+# IBC (IBController) config TEMPLATE for Nova — UNATTENDED, READ-ONLY, PAPER.
+#
+# IBC auto-launches IB Gateway, auto-enters your credentials, and manages the
+# daily restart + IBKR dialogs, so the API socket is up at 07:00 without you
+# typing a login. This solves the "TWS crashed -> asks for login -> missed the
+# 07:00 window" problem (Gateway is far more stable than TWS, and IBC handles
+# the login + the ~weekly forced re-auth).
+#
+# SETUP:
+#   1. Install IB Gateway (https://www.interactivebrokers.com -> Gateway).
+#   2. Install IBC (https://github.com/IbcAlpha/IBC/releases).
+#   3. Copy this file to your IBC config location (e.g. C:\IBC\config.ini),
+#      fill in the two credential lines below, and point IBC's StartGateway
+#      script at it.
+#   4. Set Nova's port:  setx NOVA_IBKR_PORT 4002   (Gateway paper; live = 4001)
+#   5. Schedule IBC's StartGateway.bat at ~03:00 (Task Scheduler) so Gateway is
+#      logged in and settled before the 07:00 NovaParentPaperTraining cron.
+#
+# SECURITY: this file holds your IBKR password in clear text. Keep the REAL
+# config.ini OUT of git (see .gitignore), restrict file permissions, and prefer
+# a dedicated PAPER login. (Only the template — with placeholders — is tracked.)
+# =============================================================================
+
+# --- Authentication ---------------------------------------------------------
+IbLoginId=PUT_YOUR_PAPER_USERNAME_HERE
+IbPassword=PUT_YOUR_PAPER_PASSWORD_HERE
+TradingMode=paper
+
+# --- API --------------------------------------------------------------------
+# Force the Gateway API port so it always matches NOVA_IBKR_PORT=4002.
+OverrideTwsApiPort=4002
+# Read-only API: the API socket cannot place/modify orders. Matches Nova's
+# read-only feed posture (the engine executes only through the paper stub).
+ReadOnlyApi=yes
+AcceptIncomingConnectionAction=accept
+AllowBlindTrading=no
+
+# --- Unattended startup: auto-dismiss the dialogs that would block login -----
+AcceptNonBrokerageAccountWarning=yes
+DismissPasswordExpiryWarning=yes
+DismissNSEComplianceNotice=yes
+ExistingSessionDetectedAction=primary
+MinimizeMainWindow=yes
+
+# --- Daily RESTART (not shutdown) so the socket is live before 07:00 UK ------
+# Restart well before the cron; IBC re-authenticates automatically on restart.
+IbAutoClosedown=no
+ClosedownAt=
+AutoRestartTime=03:00 AM
