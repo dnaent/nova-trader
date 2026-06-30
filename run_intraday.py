@@ -16,7 +16,7 @@ from core.context import load_books
 from core.engine import Engine, load_engine_config
 from core.ledger import Ledger
 from adapters.broker_ibkr import IBKRAdapter
-from adapters.asset_intraday import IntradayAdapter
+from adapters.asset_intraday import HybridIntradayAdapter
 from adapters.ibkr_feed import IBKRDataFeed
 from layers.analyst import LLMAuditor
 
@@ -54,9 +54,20 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
     ledger = Ledger(db_path)
     broker.seed_positions(ledger.open_trades())
 
-    # We only need the IntradayAdapter here
-    intraday_adapter = IntradayAdapter()
-    engine = Engine(books, [intraday_adapter], broker, auditor, ledger, cfg)
+    # HYBRID intraday adapters — one instance PER asset class so each carries its own
+    # trend-REGIME gate (cached per adapter id by the engine): FX gates on the US-Dollar
+    # index, Crypto on Bitcoin (the complex leader), equity intraday on the macro gate.
+    # Each merges the daily trend skeleton with intraday momentum confluence and degrades
+    # to the daily skeleton when intraday data is unavailable (replay).
+    adapters = [
+        HybridIntradayAdapter(asset_class="FX", handles={"FX"},
+                              regime_symbol="DX-Y.NYB", friction_buffer=0.0001),
+        HybridIntradayAdapter(asset_class="CRYPTO", handles={"CRYPTO"},
+                              regime_symbol="BTC-USD", friction_buffer=0.001),
+        HybridIntradayAdapter(asset_class="EQUITY", handles={"EQUITY", "ETF"},
+                              regime_symbol=None, friction_buffer=0.0005),
+    ]
+    engine = Engine(books, adapters, broker, auditor, ledger, cfg)
     return engine, books, ledger, feed
 
 def sleep_until_next_5m_mark():

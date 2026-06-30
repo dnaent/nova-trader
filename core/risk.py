@@ -189,8 +189,14 @@ class AtrSizing:
 
 class FrictionSizing:
     """
-    Intraday friction-aware sizing.
-    Calculates brackets taking into account a friction buffer to avoid being stopped out by spread/fees.
+    Intraday friction-aware sizing — the port of Isaak's FrictionAwareMacdRsi design
+    (research/archive/crypto/isaak_strategy_python). Brackets hang off a friction-
+    adjusted NET ENTRY (the price you realistically fill at after spread/fees), so the
+    take-profit is measured from that net entry and the stop isn't clipped by friction.
+
+    Sizing keeps Nova's multi-book risk discipline (risk-based qty off the real stop
+    distance, scaled by the macro gate, capped by book leverage) rather than Isaak's
+    single-book fixed-notional (60%) bet — safer across GIA/ISA/SIPP/FX/Crypto.
     """
     def __init__(self, risk_pct: float = 2.0, leverage: float = 1.0,
                  unit: str = "shares", stop_pct: float = 0.05, take_pct: float = 0.10,
@@ -206,8 +212,8 @@ class FrictionSizing:
         capacity = gate_capacity(gate_score)
         price = Decimal(candidate.price)
         side = getattr(candidate, "side", "BUY")
-        
-        # Override buffer if provided dynamically by candidate
+
+        # Per-candidate friction override (e.g. wider for crypto spreads), else the book default.
         friction = Decimal(str(candidate.meta.get("friction_buffer", self.friction_buffer)))
 
         if price == Decimal("0"):
@@ -216,27 +222,32 @@ class FrictionSizing:
                 quantity=Decimal("0"), price=price, notional=Decimal("0")
             )
 
+        # Isaak's friction-relative brackets: assume the fill is slightly WORSE than the
+        # last price (a long fills higher, a short lower), then set TP/SL off that net entry.
+        if side == "SELL":
+            net_entry = price * (Decimal("1") - friction)               # short fills lower
+            stop_loss = net_entry * (Decimal("1") + self.stop_pct)      # stop ABOVE entry
+            take_profit = net_entry * (Decimal("1") - self.take_pct)    # take BELOW entry
+        else:
+            net_entry = price * (Decimal("1") + friction)               # long fills higher
+            stop_loss = net_entry * (Decimal("1") - self.stop_pct)
+            take_profit = net_entry * (Decimal("1") + self.take_pct)
+
+        # Risk-based quantity off the REAL (friction-adjusted) stop distance, gate-scaled.
+        stop_dist = abs(net_entry - stop_loss)
         capital_at_risk = (ctx.nav * (self.risk_pct / Decimal("100")) * capacity)
-        stop_dist = price * self.stop_pct
-        
-        qty = (capital_at_risk / stop_dist).to_integral_value(rounding=ROUND_DOWN)
+        qty = (capital_at_risk / stop_dist).to_integral_value(rounding=ROUND_DOWN) \
+            if stop_dist > 0 else Decimal("0")
         notional = (qty * price).quantize(Decimal("0.01"))
-        
+
+        # Leverage cap: notional exposure must not exceed NAV * leverage (FX <=5:1, crypto <=2:1).
         max_notional = (ctx.nav * self.leverage)
         if notional > max_notional and price > 0:
             qty = (max_notional / price).to_integral_value(rounding=ROUND_DOWN)
             notional = (qty * price).quantize(Decimal("0.01"))
 
-        fric = price * friction
+        # FX needs 4 dp (pip-level); equities/crypto 2 dp.
         quantum = Decimal("0.0001") if price < Decimal("50") else Decimal("0.01")
-        
-        if side == "SELL":
-            stop_loss = (price + stop_dist + fric).quantize(quantum)
-            take_profit = (price - (price * self.take_pct) + fric).quantize(quantum)
-        else:
-            stop_loss = (price - stop_dist - fric).quantize(quantum)
-            take_profit = (price + (price * self.take_pct) - fric).quantize(quantum)
-
         return Order(
             book_id=ctx.book_id,
             account_id=ctx.ibkr_account_id,
@@ -245,8 +256,10 @@ class FrictionSizing:
             quantity=qty,
             price=price,
             notional=notional,
-            stop_loss=stop_loss,
-            take_profit=take_profit,
-            meta={"capacity_factor": str(capacity), "friction_applied": str(fric)}
+            stop_loss=stop_loss.quantize(quantum),
+            take_profit=take_profit.quantize(quantum),
+            meta={"capacity_factor": str(capacity),
+                  "net_entry": str(net_entry.quantize(quantum)),
+                  "friction": str(friction)}
         )
 

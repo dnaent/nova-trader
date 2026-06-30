@@ -10,6 +10,21 @@ from datetime import datetime, timedelta
 
 CACHE_DIR = ".cache"
 
+# ISO currency codes used to detect a spot-FX pair (e.g. "EURUSD") so the yfinance
+# FALLBACK can request the right symbol ("EURUSD=X"). The live IBKR feed resolves the
+# raw pair as a forex contract, so this normalisation is applied ONLY on yfinance calls.
+_CCY = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNH",
+        "SEK", "NOK", "SGD", "HKD", "MXN", "ZAR", "PLN", "DKK"}
+
+
+def to_yf_symbol(symbol: str) -> str:
+    """Map a 6-letter spot-FX pair to yfinance's ``=X`` form; pass everything else
+    through unchanged (equities, ``BTC-USD`` crypto, ``^`` indices, ``.L`` listings)."""
+    s = str(symbol).upper()
+    if len(s) == 6 and s.isalpha() and s[:3] in _CCY and s[3:] in _CCY:
+        return f"{s}=X"
+    return symbol
+
 # Optional real-time price source (adapters.ibkr_feed.IBKRDataFeed). When set
 # and connected, it is the PRIMARY source for daily bars; yfinance stays as the
 # automatic fallback. Injected via set_price_feed() so this module never imports
@@ -76,7 +91,7 @@ def get_daily_data(symbol: str, lookback_days: int = 365, use_cache: bool = True
             except Exception:
                 pass
                 
-    ticker = yf.Ticker(symbol)
+    ticker = yf.Ticker(to_yf_symbol(symbol))
     df = ticker.history(period=f"{lookback_days}d")
     if not df.empty:
         df.to_csv(cache_path)
@@ -117,7 +132,7 @@ def get_intraday_data(symbol: str, interval: str = "1h", lookback_days: int = 5)
         # yfinance limits intraday historical data based on interval.
         # for '5m', max is 60 days.
         days = min(lookback_days, 60) if interval in ["1m", "2m", "5m", "15m", "30m", "90m"] else lookback_days
-        df = yf.Ticker(symbol).history(period=f"{days}d", interval=interval)
+        df = yf.Ticker(to_yf_symbol(symbol)).history(period=f"{days}d", interval=interval)
         return df if (df is not None and not df.empty) else pd.DataFrame()
     except Exception:
         return pd.DataFrame()

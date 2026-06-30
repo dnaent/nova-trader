@@ -56,7 +56,8 @@ def _default_loader(symbol: str) -> pd.DataFrame:
     Must bypass get_daily_data (which routes through the feed) to avoid recursion.
     """
     import yfinance as yf
-    df = yf.Ticker(symbol).history(period="max")
+    from layers.data_loader import to_yf_symbol
+    df = yf.Ticker(to_yf_symbol(symbol)).history(period="max")   # spot-FX -> "EURUSD=X"
     if df is None or df.empty:
         return pd.DataFrame()
     idx = pd.to_datetime(df.index)

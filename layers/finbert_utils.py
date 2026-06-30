@@ -11,29 +11,48 @@ log = logging.getLogger("nova.finbert")
 _tokenizer = None
 _model = None
 _device = None
+_unavailable = False   # set once a load attempt fails -> stop retrying the heavy import
 _labels = ["positive", "negative", "neutral"]
 
-def _load_model():
-    global _tokenizer, _model, _device
-    if _model is None:
+def _load_model() -> bool:
+    """Lazy-load FinBERT once. Returns True if the model is available.
+
+    If the load fails (e.g. torch/transformers not installed, or the model can't be
+    fetched), log it ONCE, latch ``_unavailable`` and return False so every later call
+    short-circuits to a neutral fallback instead of re-attempting the expensive import
+    on every audited candidate (which otherwise spams the log and stalls the loop).
+    """
+    global _tokenizer, _model, _device, _unavailable
+    if _model is not None:
+        return True
+    if _unavailable:
+        return False
+    try:
         log.info("Lazy-loading ProsusAI/finbert PyTorch models into memory...")
         import torch
         from transformers import AutoTokenizer, AutoModelForSequenceClassification
-        
+
         _device = "cuda:0" if torch.cuda.is_available() else "cpu"
         _tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
         _model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert").to(_device)
-        log.info(f"FinBERT loaded successfully on {_device}.")
+        log.info("FinBERT loaded successfully on %s.", _device)
+        return True
+    except Exception as e:
+        _unavailable = True
+        log.warning("FinBERT unavailable (%s) — news sentiment falls back to neutral. "
+                    "Install torch + transformers to enable it.", e)
+        return False
 
 def estimate_sentiment(news_list: list[str]) -> tuple[float, str]:
     """
     Evaluates a list of headlines and returns the probability and label of the
-    most dominant headline, or an aggregated score.
+    most dominant headline, or an aggregated score. Returns a neutral (0.0,
+    "neutral") when no headlines are given OR FinBERT cannot be loaded.
     """
     if not news_list:
         return 0.0, "neutral"
-        
-    _load_model()
+    if not _load_model():
+        return 0.0, "neutral"
     import torch
     
     # We'll batch process the headlines and take the average sentiment logits

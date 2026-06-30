@@ -87,6 +87,25 @@ PROFILES: dict[str, BookProfile] = {
              "not gated (a lumpy, streaky equity curve that compounds safely is fine). "
              "Leverage <=5:1, per-trade risk <=2%.",
     ),
+    "CRYPTO": BookProfile(
+        # Crypto follows the SAME PRINCIPLES as Forex (operator directive 2026-06-26):
+        # account-level/equity-curve judging of a style-agnostic tactical book, with
+        # crypto-appropriate (WIDER) drawdown tolerance for the asset's volatility.
+        # GATED on profit factor, drawdown and MAR/Calmar; win rate / reward:risk /
+        # Sortino / consecutive losses are STYLE metrics -> logged, not gated.
+        # HONESTY (lower trust tier): an intraday crypto edge can only be validated on
+        # a recent window (short history, no GFC-scale stress test) and the daily
+        # skeleton is weak — so this book is robustly ENGINEERED, not strongly
+        # edge-proven. PAPER until the profile passes AND the operator authorizes live.
+        name="CRYPTO", min_trades=200, min_profit_factor=1.3, min_mar=0.3,
+        max_drawdown_pct=35.0, mc_max_drawdown_pct=40.0, min_sortino=1.0,
+        max_consec_losses=8, account_level=True,
+        note="Account-level judging like FOREX with wider (35%/MC 40%) drawdown "
+             "tolerance for crypto volatility. GATED on PF, drawdown and MAR/Calmar. "
+             "LOWER TRUST TIER: recent-window-only validation (short intraday history) "
+             "— robustly engineered (regime-gated, friction-aware, leverage-capped, "
+             "circuit-broken), not strongly edge-proven.",
+    ),
 }
 
 
@@ -97,8 +116,13 @@ def profile_for_book(ctx) -> BookProfile:
     taxable margin account, so it is identified by asset class, not wrapper).
     Otherwise selected by wrapper. Falls back to a universal-floor-only profile.
     """
-    if "FX" in getattr(ctx, "allowed_assets", set()):
+    allowed = getattr(ctx, "allowed_assets", set())
+    if "FX" in allowed:
         return PROFILES["FOREX"]
+    if "CRYPTO" in allowed:
+        # Crypto follows Forex's account-level principles (see the CRYPTO profile);
+        # identified by asset class, not wrapper (it is also a taxable MARGIN book).
+        return PROFILES["CRYPTO"]
     wrapper = getattr(ctx, "wrapper", "")
     return PROFILES.get(wrapper, BookProfile(name="GENERIC", min_trades=100))
 

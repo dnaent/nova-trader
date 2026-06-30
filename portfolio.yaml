@@ -171,10 +171,11 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false
-    # RE-IMPLEMENTED (2026-06-24): Switched to 5-minute Intraday Framework (MACD/RSI/EMA200)
-    # using friction-aware bracket sizing. Re-enabled for the intraday sprint.
+    # HYBRID (2026-06-26): daily trend-REGIME gate (USD index / DXY ADX) + intraday
+    # MACD/RSI/EMA200 entry confluence, friction-aware sizing. Merges the two prior FX
+    # implementations (see adapters/asset_intraday.HybridIntradayAdapter).
     strategy: intraday
-    gate_min: 0                       # Intraday trades on momentum, not macro gate
+    gate_min: 45                      # regime gate active: DXY ADX>=~25 (a real trend), else hold cash
     universe:
       - EURUSD
       - GBPUSD
@@ -205,7 +206,7 @@ books:
     allowed_assets: ["EQUITY", "ETF"]
     tax_policy: null
     strategy: intraday
-    gate_min: 0                       # Intraday momentum-driven
+    gate_min: 40                      # macro-gate floor (equity intraday uses the general MacroGate)
     universe:
       - SPY
       - QQQ
@@ -232,8 +233,12 @@ books:
     tax_policy:
       type: uk_cgt
       higher_rate: false
+    # HYBRID (2026-06-26): follows the SAME PRINCIPLES as the Forex book — daily
+    # trend-REGIME gate (Bitcoin / BTC-USD ADX = crypto-complex leader) + intraday
+    # MACD/RSI/EMA200 entry confluence, friction-aware sizing, account-level CRYPTO
+    # validation profile (wider DD tolerance). HybridIntradayAdapter(asset_class=CRYPTO).
     strategy: intraday
-    gate_min: 0                       # Crypto trades 24/7 on momentum
+    gate_min: 45                      # regime gate active: BTC ADX>=~25 (a real trend), else hold cash
     universe:
       - BTC-USD
       - ETH-USD
