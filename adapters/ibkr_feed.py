@@ -37,9 +37,45 @@ log = logging.getLogger("nova.feed.ibkr")
 LIVE, FROZEN, DELAYED, DELAYED_FROZEN = 1, 2, 3, 4
 
 
+# Currency codes (spot-FX pair detection) and crypto bases (IBKR/PAXOS) so the feed
+# can build the right IBKR contract for the intraday FX/Crypto books. The engine
+# universe uses BARE pairs ("EURUSD") and dashed crypto ("BTC-USD"); the Yahoo "=X"
+# suffix is also accepted for FX.
+_CCY = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNH",
+        "SEK", "NOK", "SGD", "HKD", "MXN", "ZAR", "PLN", "DKK"}
+_CRYPTO = {"BTC", "ETH", "LTC", "BCH", "PAXG", "LINK", "UNI", "AAVE",
+           "MATIC", "DOGE", "SOL", "ADA", "DOT", "AVAX", "XRP"}
+
+
+def _fx_pair(symbol: str) -> Optional[str]:
+    """Return the 6-letter pair (e.g. 'EURUSD') for a spot-FX symbol, else None.
+    Accepts both the bare pair and the Yahoo '=X' suffix."""
+    s = symbol.upper().replace("=X", "")
+    if len(s) == 6 and s.isalpha() and s[:3] in _CCY and s[3:] in _CCY:
+        return s
+    return None
+
+
+def _crypto_base(symbol: str) -> Optional[str]:
+    """Return the crypto base (e.g. 'BTC' from 'BTC-USD') for a USD crypto pair, else None."""
+    s = symbol.upper()
+    if s.endswith("-USD") and s[:-4] in _CRYPTO:
+        return s[:-4]
+    return None
+
+
 def _is_fx(symbol: str) -> bool:
-    """Universe FX tickers use the Yahoo '=X' suffix, e.g. 'EURUSD=X'."""
-    return symbol.upper().endswith("=X")
+    """True for a spot-FX pair (bare 'EURUSD' or Yahoo 'EURUSD=X')."""
+    return _fx_pair(symbol) is not None
+
+
+def _what_to_show(symbol: str) -> str:
+    """IBKR `whatToShow` per asset class: FX=MIDPOINT, crypto=AGGTRADES, else TRADES."""
+    if _fx_pair(symbol):
+        return "MIDPOINT"
+    if _crypto_base(symbol):
+        return "AGGTRADES"
+    return "TRADES"
 
 
 def _duration_str(lookback_days: int) -> str:
@@ -109,17 +145,20 @@ class IBKRDataFeed:
     def _contract(self, symbol: str):
         """Build a best-effort IBKR contract, or None to defer to yfinance.
 
-        Returns None for symbols this simple resolver can't map to a US
-        SMART/USD contract — international/suffixed tickers (e.g. 'VWRL.L'),
-        index proxies (e.g. 'DX-Y.NYB') and Yahoo index symbols ('^VIX', '^TNX').
-        Proper exchange/currency mapping is a
-        later enhancement; until then those flow through the yfinance fallback
+        Resolves spot-FX pairs ('EURUSD'/'EURUSD=X' -> Forex) and USD crypto
+        ('BTC-USD' -> Crypto on PAXOS) so the intraday FX/Crypto books get live
+        feed data. Returns None for symbols this resolver can't map — international/
+        suffixed tickers (e.g. 'VWRL.L'), index proxies ('DX-Y.NYB') and Yahoo
+        index symbols ('^VIX', '^TNX') — which flow through the yfinance fallback
         without noisy contract-resolution errors.
         """
-        from ib_async import Stock, Forex
-        if _is_fx(symbol):
-            pair = symbol.upper().replace("=X", "")   # 'EURUSD=X' -> 'EURUSD'
+        from ib_async import Stock, Forex, Crypto
+        pair = _fx_pair(symbol)
+        if pair:
             return Forex(pair)
+        base = _crypto_base(symbol)
+        if base:
+            return Crypto(base, "PAXOS", "USD")       # IBKR crypto via Paxos
         if symbol.startswith("^") or "." in symbol or "-" in symbol:
             return None                               # Yahoo index (^VIX) / non-US -> yfinance fallback
         return Stock(symbol.upper(), "SMART", "USD")
@@ -155,7 +194,7 @@ class IBKRDataFeed:
             contract = self._contract(symbol)
             if contract is None or not self._ib.qualifyContracts(contract):
                 return pd.DataFrame()
-            what = "MIDPOINT" if _is_fx(symbol) else "TRADES"
+            what = _what_to_show(symbol)
             bars = self._ib.reqHistoricalData(
                 contract, endDateTime="", durationStr=_duration_str(lookback_days),
                 barSizeSetting="1 day", whatToShow=what, useRTH=True, formatDate=1)
@@ -188,7 +227,7 @@ class IBKRDataFeed:
             contract = self._contract(symbol)
             if contract is None or not self._ib.qualifyContracts(contract):
                 return pd.DataFrame()
-            what = "MIDPOINT" if _is_fx(symbol) else "TRADES"
+            what = _what_to_show(symbol)
             bars = self._ib.reqHistoricalData(
                 contract, endDateTime="", durationStr=f"{max(1, lookback_days)} D",
                 barSizeSetting=bar_size, whatToShow=what, useRTH=use_rth, formatDate=1)

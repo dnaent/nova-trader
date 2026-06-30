@@ -71,3 +71,6 @@ htmlcov/
 # IBC: the real config holds IBKR credentials in clear text — keep it OUT of git.
 # Only the placeholder template (infra/ibc/config.ini.template) is tracked.
 infra/ibc/config.ini
+
+# Dropped-in screenshots (not project assets)
+Screenshot*.png

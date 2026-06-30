@@ -104,8 +104,17 @@ def _now() -> str:
 
 class Ledger:
     def __init__(self, db_path: str = "nova_ledger.db"):
-        self.conn = sqlite3.connect(db_path)
+        # timeout + WAL so the daily allocation cron (run_paper) and the intraday
+        # FX/Crypto task (run_intraday) can write the shared ledger concurrently
+        # without "database is locked" (WAL = concurrent readers + one writer;
+        # busy_timeout makes a writer wait rather than error). No-op on :memory:.
+        self.conn = sqlite3.connect(db_path, timeout=30.0)
         self.conn.row_factory = sqlite3.Row
+        try:
+            self.conn.execute("PRAGMA journal_mode=WAL")
+            self.conn.execute("PRAGMA busy_timeout=30000")
+        except Exception:
+            pass
         self.conn.executescript(_SCHEMA)
         self._migrate()
         self.conn.commit()

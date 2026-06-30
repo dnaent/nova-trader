@@ -28,14 +28,25 @@ def test_feed_unconnected_is_safe():
 
 
 def test_contract_routing():
-    """US equities -> IBKR Stock; FX -> Forex; index/non-US -> None (yfinance)."""
+    """US equities -> Stock; FX -> Forex; crypto -> Crypto; index/non-US -> None."""
+    from ib_async import Stock, Forex, Crypto
     feed = IBKRDataFeed(port=9999)
-    assert feed._contract("SPY") is not None                 # US equity
-    assert feed._contract("EURUSD=X") is not None            # FX
+    assert isinstance(feed._contract("SPY"), Stock)          # US equity
+    assert isinstance(feed._contract("EURUSD=X"), Forex)     # FX (=X suffix)
+    assert isinstance(feed._contract("EURUSD"), Forex)       # FX (bare pair, engine universe)
+    assert isinstance(feed._contract("BTC-USD"), Crypto)     # crypto -> PAXOS
+    assert isinstance(feed._contract("ETH-USD"), Crypto)
     # Yahoo index symbols and non-US/suffixed tickers defer to yfinance (no noisy
     # IBKR contract errors in the macro gate's hot path).
     for sym in ("^VIX", "^VIX3M", "^TNX", "^IRX", "DX-Y.NYB", "VWRL.L"):
         assert feed._contract(sym) is None, sym
+
+
+def test_what_to_show_per_asset_class():
+    from adapters.ibkr_feed import _what_to_show
+    assert _what_to_show("EURUSD") == "MIDPOINT"
+    assert _what_to_show("BTC-USD") == "AGGTRADES"
+    assert _what_to_show("SPY") == "TRADES"
 
 
 # --------------------------------------------------------------------------- #

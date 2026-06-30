@@ -44,12 +44,12 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
                  model_name: str = "qwen2.5:7b-instruct",
                  exec_threshold: float | None = None):
     """Assemble the paper-training engine. Returns (engine, books, ledger, feed)."""
-    # FX workstream CLOSED 2026-06-20: comprehensively tested (daily-technical, intraday,
-    # macro risk-proxy, cross-sectional/dollar-neutral) — no accessible edge. Excluded from
-    # the live loop so the track record is purely the validated 3 equity allocation books.
-    # The book definition stays in portfolio.yaml (parked) + the research probes remain as
-    # the documented evidence; re-add here to revisit.
-    books = [b for b in load_books("portfolio.yaml") if b.book_id != "ibkr_forex_margin"]
+    # run_paper owns the DAILY ALLOCATION books (ISA/SIPP/GIA). The INTRADAY books
+    # (FX/Crypto/ISA-intraday — Isaak's hybrid) are owned by run_intraday.py on a
+    # frequent schedule, so they're excluded here to avoid two processes managing the
+    # same book's positions/exits. Both write the same nova_ledger.db (WAL); clean
+    # split by book. (This also excludes the re-opened FX book, now strategy=intraday.)
+    books = [b for b in load_books("portfolio.yaml") if b.strategy != "intraday"]
     cfg = load_engine_config("config.yaml")
     if exec_threshold is not None:
         # Paper-only override so the operator can deliberately exercise the full

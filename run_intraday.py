@@ -39,7 +39,9 @@ def build_engine(db_path: str = "nova_ledger.db", *, use_feed: bool = True,
     if use_feed:
         import os
         port = int(os.environ.get("NOVA_IBKR_PORT", "7497"))
-        feed = IBKRDataFeed(port=port)
+        # Distinct clientId from run_paper's feed (17) so both can hold IBKR
+        # connections concurrently (IBKR rejects duplicate clientIds).
+        feed = IBKRDataFeed(port=port, client_id=18)
         if feed.connect():
             dl.set_price_feed(feed)
             log.info("Live IBKR data feed engaged (read-only).")
