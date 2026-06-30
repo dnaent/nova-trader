@@ -17,6 +17,11 @@ _CCY = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNH",
         "SEK", "NOK", "SGD", "HKD", "MXN", "ZAR", "PLN", "DKK"}
 
 
+# Map a yfinance/engine interval string to IBKR's barSizeSetting for the feed.
+_IBKR_BAR_SIZE = {"1m": "1 min", "2m": "2 mins", "5m": "5 mins", "15m": "15 mins",
+                  "30m": "30 mins", "1h": "1 hour", "90m": "1 hour", "1d": "1 day"}
+
+
 def to_yf_symbol(symbol: str) -> str:
     """Map a 6-letter spot-FX pair to yfinance's ``=X`` form; pass everything else
     through unchanged (equities, ``BTC-USD`` crypto, ``^`` indices, ``.L`` listings)."""
@@ -123,7 +128,11 @@ def get_intraday_data(symbol: str, interval: str = "1h", lookback_days: int = 5)
     if feed is not None:
         try:
             if feed.is_connected():
-                df = feed.get_intraday_bars(symbol, lookback_days=lookback_days)
+                # Pass the requested bar size through to IBKR (it defaults to "1 hour"
+                # otherwise, so a "5m" request silently returned hourly bars — too few
+                # rows for EMA-200 on a 5-day lookback).
+                df = feed.get_intraday_bars(symbol, bar_size=_IBKR_BAR_SIZE.get(interval, "1 hour"),
+                                            lookback_days=lookback_days)
                 if df is not None and not df.empty:
                     return df
         except Exception:

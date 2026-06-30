@@ -37,7 +37,7 @@ class _LiveLike:
     """A feed WITH get_intraday_bars (like the live IBKRDataFeed)."""
     def __init__(self, df): self._df = df
     def is_connected(self): return True
-    def get_intraday_bars(self, symbol, lookback_days=5): return self._df
+    def get_intraday_bars(self, symbol, bar_size="1 hour", lookback_days=5): return self._df
 
 
 def test_intraday_skipped_under_replay_feed():
