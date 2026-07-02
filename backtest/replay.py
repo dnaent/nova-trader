@@ -50,7 +50,31 @@ log = logging.getLogger("nova.replay")
 DEFAULT_NAVS = {"ISA": 4000, "SIPP": 13000, "GIA": 2000, "MARGIN": 5000}
 
 
-def _default_loader(symbol: str) -> pd.DataFrame:
+# Long-history PROXY map: young UK-listed Acc funds (post-2019 inceptions) that
+# post-date the validation window are backfilled PRE-inception with a scaled
+# long-history proxy, so the historical replay can hold the full basket and produce
+# a real, reproducible per-book verdict instead of a broken young-ticker curve.
+# HONEST: recent years use the ACTUAL fund (direct); only the deep past — which
+# physically has no data (the fund didn't exist) — is proxied. The LIVE config is
+# unaffected; this is a validation-harness aid only.
+HISTORICAL_PROXIES = {
+    "SMGB.L": "SOXX",   # L&G US Semiconductors  -> iShares Semiconductor (2001)
+    "REGB.L": "REMX",   # VanEck Rare Earth      -> VanEck Rare Earth/Strategic Metals (2010)
+    "VPNG.L": "VNQ",    # Global X Data-Centre   -> Vanguard REIT (2004)
+    "AIAG.L": "QQQ",    # L&G Artificial Intel.  -> Nasdaq-100 (1999)
+    "INRA.L": "ICLN",   # iShares Clean Energy   -> iShares Global Clean Energy (2008)
+    "ROBG.L": "QQQ",    # L&G ROBO Robotics      -> Nasdaq-100 (tech growth, 1999)
+    "VWRP.L": "ACWI",   # Vanguard FTSE All-World-> MSCI ACWI (2008)
+    "URNP.L": "URA",    # Sprott Uranium Miners  -> Global X Uranium (2010)
+    "GCP.L":  "IGF",    # GCP Infrastructure     -> iShares Global Infrastructure (2007)
+    "BRWM.L": "XME",    # BlackRock World Mining -> SPDR Metals & Mining (2006)
+    "SGLN.L": "GLD",    # iShares Physical Gold  -> SPDR Gold (2004)
+    "IGLG.L": "GLD",    # iShares Physical Gold  -> SPDR Gold (2004)
+    "IUKD.L": "IDV",    # iShares UK Dividend    -> iShares Intl Dividend (2007; IUKD.L itself is 2005)
+}
+
+
+def _raw_history(symbol: str) -> pd.DataFrame:
     """Fetch a symbol's FULL history once (yfinance), normalised to naive dates.
 
     Must bypass get_daily_data (which routes through the feed) to avoid recursion.
@@ -66,6 +90,42 @@ def _default_loader(symbol: str) -> pd.DataFrame:
     df = df.copy()
     df.index = idx.normalize()
     return df
+
+
+def _default_loader(symbol: str) -> pd.DataFrame:
+    """Proxy-aware history loader (the replay default).
+
+    For a symbol in HISTORICAL_PROXIES: serve its REAL history where it exists and
+    splice a SCALED long-history proxy onto the pre-inception past (continuous at the
+    join, no price jump). Everything else loads raw. Pass ``loader=_raw_history`` to
+    run_replay for a no-proxy (raw-ticker) run.
+    """
+    real = _raw_history(symbol)
+    proxy_sym = HISTORICAL_PROXIES.get(symbol)
+    if not proxy_sym:
+        return real
+    proxy = _raw_history(proxy_sym)
+    if proxy is None or proxy.empty:
+        return real
+    if real is None or real.empty:
+        log.info("[replay] %s: no real history -> using proxy %s in full", symbol, proxy_sym)
+        return proxy
+    join = real.index[0]
+    before = proxy[proxy.index < join]
+    if before.empty:
+        return real
+    try:
+        ratio = float(real["Close"].iloc[0]) / float(before["Close"].iloc[-1])
+    except (ZeroDivisionError, ValueError, TypeError):
+        return real
+    before = before.copy()
+    for c in ("Open", "High", "Low", "Close"):
+        if c in before.columns:
+            before[c] = before[c] * ratio
+    spliced = pd.concat([before, real])
+    log.info("[replay] %s: proxy %s backfills pre-%s (%d rows) + real after (%d rows)",
+             symbol, proxy_sym, join.date(), len(before), len(real))
+    return spliced
 
 
 class ReplayFeed:
@@ -222,13 +282,17 @@ def main() -> None:
     p.add_argument("--db", default="nova_replay.db", help="ledger path for the dataset")
     p.add_argument("--exec-threshold", type=float, default=50.0, help="blended score to act")
     p.add_argument("--gate-min", type=float, default=None, help="macro-gate floor override")
+    p.add_argument("--no-proxies", action="store_true",
+                   help="disable long-history proxy backfill (raw tickers only; young "
+                        "funds will be untradeable pre-inception)")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     end = pd.Timestamp(args.end) if args.end else pd.Timestamp(datetime.utcnow().date())
     start = pd.Timestamp(args.start) if args.start else end - timedelta(days=int(args.years * 365))
     ledger = run_replay(start, end, db_path=args.db, step_days=args.step,
-                        exec_threshold=args.exec_threshold, gate_min=args.gate_min)
+                        exec_threshold=args.exec_threshold, gate_min=args.gate_min,
+                        loader=(_raw_history if args.no_proxies else None))
     ledger.close()
 
 

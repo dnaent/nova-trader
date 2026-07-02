@@ -6,7 +6,8 @@ import pandas as pd
 import layers.data_loader as dl
 from core.context import Candidate, AccountContext, NullTaxPolicy
 from core.risk import NavPctSizing
-from backtest.replay import ReplayFeed, run_replay
+import backtest.replay as replay
+from backtest.replay import ReplayFeed, run_replay, HISTORICAL_PROXIES
 
 
 def _tactical_equity_book(universe=("SPY", "NVDA")):
@@ -48,6 +49,41 @@ def test_replayfeed_returns_copies():
 def test_replayfeed_not_connected_without_as_of():
     feed = ReplayFeed(loader=lambda s: pd.DataFrame({"Close": [1.0]}))
     assert feed.is_connected() is False                    # no as-of set yet
+
+
+# --------------------------------------------------------------------------- #
+# Long-history proxy anchors (young funds validatable across the full window)
+# --------------------------------------------------------------------------- #
+def _frame(dates, prices):
+    idx = pd.to_datetime(dates)
+    prices = prices if isinstance(prices, (list, tuple)) else [prices] * len(idx)
+    return pd.DataFrame({"Open": prices, "High": prices, "Low": prices,
+                         "Close": [float(p) for p in prices], "Volume": [1] * len(idx)},
+                        index=idx)
+
+
+def test_proxy_backfill_splices_continuously(monkeypatch):
+    """A young fund (real 2021+) is backfilled with its SCALED proxy pre-inception,
+    continuous at the join (no price jump)."""
+    real = _frame(["2021-01-04", "2021-01-05"], [100, 101])   # fund inception 2021
+    proxy = _frame(["2019-01-02", "2019-01-03", "2021-01-04"], 50)  # proxy from 2019, price 50
+    monkeypatch.setattr(replay, "_raw_history",
+                        lambda s: real if s == "SMGB.L" else proxy)
+    out = replay._default_loader("SMGB.L")
+    assert out.index[0] == pd.Timestamp("2019-01-02")        # proxy backfills the deep past
+    assert out.index[-1] == pd.Timestamp("2021-01-05")       # real fund at the recent end
+    assert len(out) == 4                                      # 2 proxy (pre-join) + 2 real
+    # Proxy scaled by real/proxy=100/50=2 so it joins continuously: last proxy == first real.
+    assert out["Close"].iloc[0] == 100.0
+    assert out["Close"].iloc[-1] == 101.0                    # untouched real value
+
+
+def test_no_proxy_symbol_passes_through(monkeypatch):
+    raw = _frame(["2020-01-01"], 42)
+    monkeypatch.setattr(replay, "_raw_history", lambda s: raw)
+    assert "NVDA" not in HISTORICAL_PROXIES
+    out = replay._default_loader("NVDA")
+    assert out["Close"].iloc[0] == 42.0                      # unchanged (no proxy)
 
 
 # --------------------------------------------------------------------------- #
